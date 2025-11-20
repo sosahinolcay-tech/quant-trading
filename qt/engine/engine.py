@@ -14,6 +14,9 @@ class SimulationEngine:
         self.time = 0.0
         self.last_prices = {}
         self.account = Account(fee=execution_fee)
+        # runtime trade log and turnover
+        self.trade_log = []
+        self.turnover = 0.0
 
     def register_strategy(self, strat):
         self.strategies.append(strat)
@@ -42,25 +45,53 @@ class SimulationEngine:
     def _process_market_event(self, ev: MarketEvent):
         # record last price per symbol
         self.last_prices[ev.symbol] = ev.price
-        # update order book for the demo "TEST" symbol if present
-        if ev.symbol == "TEST" and ev.type == "TRADE":
+        # apply trade to order book (so market trades can hit resting orders)
+        if ev.type == "TRADE":
             self.order_book.apply_trade(ev.price, ev.size)
+            # process market trade against resting limit orders
+            fills_from_book = self.order_book.process_trade(ev.price, ev.size, symbol=ev.symbol)
+            for fdict in fills_from_book:
+                # create a FillEvent applying slippage/fee using the ExecutionModel
+                fill = self.execution.fill_from_book(
+                    order_id=fdict.get('order_id'),
+                    side=fdict.get('side'),
+                    price=fdict.get('price'),
+                    quantity=fdict.get('quantity'),
+                    timestamp=ev.timestamp,
+                    order_book=self.order_book,
+                )
+                # set symbol from trade if available
+                fill.symbol = ev.symbol
+                # account and notify
+                try:
+                    self.account.on_fill(fill)
+                except Exception:
+                    pass
+                for s in self.strategies:
+                    s.on_order_filled(fill)
+                # record trade log and turnover
+                self.trade_log.append({'timestamp': fill.timestamp, 'order_id': fill.order_id, 'symbol': fill.symbol, 'side': fill.side, 'price': fill.price, 'quantity': fill.quantity, 'fee': fill.fee})
+                self.turnover += abs(fill.price * fill.quantity)
 
         # give event to strategies
         orders = []
         for s in self.strategies:
             orders.extend(s.on_market_event(ev))
 
-        # process orders
+        # process orders (limit orders will be added to the book; market orders may fill immediately)
         for o in orders:
-            fill = self.execution.simulate_fill(o)
-            # update account and inform strategies
-            try:
-                self.account.on_fill(fill)
-            except Exception:
-                pass
-            for s in self.strategies:
-                s.on_order_filled(fill)
+            fill = self.execution.simulate_fill(o, order_book=self.order_book)
+            if fill:
+                # update account and inform strategies
+                try:
+                    self.account.on_fill(fill)
+                except Exception:
+                    pass
+                for s in self.strategies:
+                    s.on_order_filled(fill)
+                # record trade log and turnover
+                self.trade_log.append({'timestamp': fill.timestamp, 'order_id': fill.order_id, 'symbol': fill.symbol, 'side': fill.side, 'price': fill.price, 'quantity': fill.quantity, 'fee': fill.fee})
+                self.turnover += abs(fill.price * float(fill.quantity))
 
         # after processing orders and fills, record MTM equity using last_prices
         try:

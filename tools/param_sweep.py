@@ -6,22 +6,24 @@ from qt.strategies.market_maker import SimpleMarketMaker
 from qt.analytics.metrics import compute_returns, compute_sharpe, compute_drawdown
 
 
-def run_demo_with_params(base_spread, inventory_coeff):
-    # demo engine with small execution fee and slippage
-    eng = SimulationEngine(execution_fee=0.0005, slippage_coeff=0.0001)
+def run_demo_with_params(base_spread, inventory_coeff, execution_fee=0.0005, slippage_coeff=0.0001):
+    # demo engine with configurable execution fee and slippage
+    eng = SimulationEngine(execution_fee=execution_fee, slippage_coeff=slippage_coeff)
     mm = SimpleMarketMaker(symbol='TEST', base_spread=base_spread, inventory_coeff=inventory_coeff)
     eng.register_strategy(mm)
     eng.run_demo()
-    # return equity history (timestamp, equity)
-    return eng.account.equity_history
+    # return equity history (timestamp, equity) and engine for trade log access
+    return eng.account.equity_history, eng
 
 
 def sweep_and_save(spreads, inv_coeffs, out_csv="sweep_results.csv"):
-    rows = [("spread", "inv_coeff", "final_equity", "sharpe", "max_drawdown", "equity_path")]
+    rows = [("spread", "inv_coeff", "execution_fee", "slippage_coeff", "final_equity", "sharpe", "max_drawdown", "turnover", "equity_path", "trades_path")]
     out_dir = Path("notebooks")
     out_dir.mkdir(parents=True, exist_ok=True)
-    for s, ic in itertools.product(spreads, inv_coeffs):
-        history = run_demo_with_params(s, ic)
+    for s, ic, ef, sc in itertools.product(spreads, inv_coeffs, [0.0000, 0.0005, 0.001], [0.0, 0.0001, 0.0005]):
+        history, eng = run_demo_with_params(s, ic, execution_fee=ef, slippage_coeff=sc)
+        turnover = None
+        trades_path = ""
         if not history:
             final_equity = None
             sharpe = None
@@ -29,7 +31,7 @@ def sweep_and_save(spreads, inv_coeffs, out_csv="sweep_results.csv"):
             equity_path = ""
         else:
             # history is list of (timestamp, equity)
-            fname = out_dir / f"equity_s{s}_i{ic}.csv"
+            fname = out_dir / f"equity_s{s}_i{ic}_ef{ef}_sc{sc}.csv"
             with open(fname, "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(("timestamp", "equity"))
@@ -41,7 +43,17 @@ def sweep_and_save(spreads, inv_coeffs, out_csv="sweep_results.csv"):
             sharpe = compute_sharpe(rets)
             max_dd = compute_drawdown(equity_vals)["max_drawdown"]
             equity_path = str(fname)
-        rows.append((s, ic, final_equity, sharpe, max_dd, equity_path))
+            # save trades and compute turnover
+            trades_fname = out_dir / f"trades_s{s}_i{ic}_ef{ef}_sc{sc}.csv"
+            with open(trades_fname, "w", newline="") as f:
+                w = csv.writer(f)
+                w.writerow(("timestamp", "order_id", "symbol", "side", "price", "quantity", "fee"))
+                turnover = 0.0
+                for t in eng.trade_log:
+                    w.writerow((t['timestamp'], t['order_id'], t.get('symbol'), t.get('side'), t.get('price'), t.get('quantity'), t.get('fee')))
+                    turnover += abs(float(t.get('price')) * float(t.get('quantity')))
+            trades_path = str(trades_fname)
+        rows.append((s, ic, ef, sc, final_equity, sharpe, max_dd, turnover, equity_path, trades_path))
     with open(out_csv, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerows(rows)
