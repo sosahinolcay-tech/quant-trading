@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    # optionally ignore very large or experimental deps
+    # ignore:
+    #   - dependency-name: "faiss-cpu"
+    #     versions: [">=1.7.0"]
