@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quant-trading"
+version = "0.0.0"
+authors = [ { name = "Auto", email = "auto@example.com" } ]
+description = "Quant trading skeleton for demo"
+dependencies = []

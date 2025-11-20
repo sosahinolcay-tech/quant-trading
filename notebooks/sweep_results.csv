@@ -1,0 +1,5 @@
+spread,inv_coeff,final_equity,sharpe,max_drawdown,equity_path
+0.5,0.0,102956.53816017463,304.99015417549504,0.0,notebooks/equity_s0.5_i0.0.csv
+0.5,0.1,102956.53816017463,304.99015417549504,0.0,notebooks/equity_s0.5_i0.1.csv
+1.0,0.0,103156.53817017471,324.2092247786805,0.0,notebooks/equity_s1.0_i0.0.csv
+1.0,0.1,103156.53817017471,324.2092247786805,0.0,notebooks/equity_s1.0_i0.1.csv

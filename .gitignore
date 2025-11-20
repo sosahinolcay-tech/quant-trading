@@ -1,0 +1,22 @@
+# Byte-compiled / caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+.envrc
+venv/
+# Virtual envs
+.venv/
+# Jupyter checkpoints
+.ipynb_checkpoints/
+# OS files
+.DS_Store
+# Python dist
+dist/
+build/
+*.egg-info/
+# Editor
+.vscode/
+.idea/
