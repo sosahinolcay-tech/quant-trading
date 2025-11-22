@@ -27,12 +27,93 @@ def compute_drawdown(equity_curve):
 
 
 def rolling_sharpe(equity_curve, window=20, annualization=252.0):
-    eq = np.array(equity_curve)
+    """Return a rolling Sharpe series aligned to the input equity_curve.
+
+    This returns a numpy array with the same length as `equity_curve`.
+    Values before the first full window are padded with np.nan so plotting
+    or alignment with timestamps is straightforward.
+    """
+    eq = np.array(equity_curve, dtype=float)
+    if eq.size < 2:
+        return np.full(eq.shape, np.nan)
     rets = compute_returns(eq)
-    if len(rets) < window:
-        return []
-    rolls = []
-    for i in range(len(rets) - window + 1):
-        w = rets[i:i+window]
-        rolls.append(compute_sharpe(w, annualization=annualization))
-    return rolls
+    n = len(rets)
+    if n < window:
+        # not enough returns to compute a single window
+        return np.full(eq.shape, np.nan)
+    shs = np.full(n, np.nan)
+    for i in range(window - 1, n):
+        w = rets[i - window + 1:i + 1]
+        shs[i] = compute_sharpe(w, annualization=annualization)
+    # pad to match equity_curve length (equity length = returns+1)
+    padded = np.full(eq.shape, np.nan)
+    padded[1:] = shs
+    return padded
+
+
+def plot_equity_curve(equity_curve, ax=None, title="Equity Curve", savepath=None):
+    """Plot an equity curve using matplotlib. Returns the matplotlib Axes.
+
+    If matplotlib is not available, raises ImportError.
+    """
+    try:
+        import matplotlib.pyplot as plt
+    except Exception as e:
+        raise ImportError("matplotlib required for plotting") from e
+
+    eq = np.array(equity_curve, dtype=float)
+    if ax is None:
+        fig, ax = plt.subplots()
+    ax.plot(eq, label="Equity")
+    ax.set_title(title)
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Equity")
+    ax.grid(True)
+    ax.legend()
+    if savepath:
+        fig = ax.get_figure()
+        fig.savefig(savepath, bbox_inches="tight")
+    return ax
+
+
+def plot_drawdown(equity_curve, ax=None, title="Drawdown", savepath=None):
+    try:
+        import matplotlib.pyplot as plt
+    except Exception as e:
+        raise ImportError("matplotlib required for plotting") from e
+
+    dd = compute_drawdown(equity_curve)
+    series = np.array(dd.get("drawdown_series", []), dtype=float)
+    if ax is None:
+        fig, ax = plt.subplots()
+    ax.plot(series, label="Drawdown")
+    ax.set_title(title)
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Drawdown")
+    ax.grid(True)
+    ax.legend()
+    if savepath:
+        fig = ax.get_figure()
+        fig.savefig(savepath, bbox_inches="tight")
+    return ax
+
+
+def plot_rolling_sharpe(equity_curve, window=20, ax=None, title="Rolling Sharpe", savepath=None):
+    try:
+        import matplotlib.pyplot as plt
+    except Exception as e:
+        raise ImportError("matplotlib required for plotting") from e
+
+    series = rolling_sharpe(equity_curve, window=window)
+    if ax is None:
+        fig, ax = plt.subplots()
+    ax.plot(series, label=f"Rolling Sharpe (w={window})")
+    ax.set_title(title)
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Sharpe")
+    ax.grid(True)
+    ax.legend()
+    if savepath:
+        fig = ax.get_figure()
+        fig.savefig(savepath, bbox_inches="tight")
+    return ax
