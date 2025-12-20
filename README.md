@@ -1,28 +1,110 @@
-# Quant Trading System (skeleton)
+# Quant Trading Framework
 
 [![CI](https://github.com/sosahinolcay-tech/quant-trading/actions/workflows/ci.yml/badge.svg)](https://github.com/sosahinolcay-tech/quant-trading/actions)
 
-Event-driven quant trading simulator skeleton. This repository contains a minimal, runnable foundation for the full design you provided (data, engine, strategies, execution, risk, analytics).
+A comprehensive event-driven quantitative trading simulator built in Python. This framework includes multiple trading strategies, backtesting engine, risk management, analytics, and performance evaluation tools.
 
-Quickstart (development):
+## Features
 
-1. Create a virtualenv and install requirements:
+- **Event-Driven Engine**: Realistic simulation with limit order matching, slippage, and transaction costs
+- **Trading Strategies**:
+  - Market Maker (Avellaneda model with adaptive quoting)
+  - Pairs Trading (rolling OLS with z-score signals)
+- **Analytics & Reporting**: Sharpe ratio, drawdown analysis, bootstrap confidence intervals, trade logs
+- **Tools**: Parameter sweep optimization, walk-forward analysis, demo scripts
+- **Visualization**: Interactive dashboards and Jupyter notebooks for results
+- **Testing**: Comprehensive unit and integration tests
+- **CI/CD**: Automated testing and deployment pipeline
 
+## Quick Start
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/sosahinolcay-tech/quant-trading.git
+cd quant-trading
+```
+
+2. Create virtual environment and install dependencies:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. Run the demo CLI:
+### Run Demos
 
+- **Market Maker Demo**:
 ```bash
-python cli.py --demo
+python tools/run_demo.py
 ```
 
-Run tests:
+- **Pairs Trading Demo**:
+```bash
+python tools/demo_pairs.py
+```
+
+- **Interactive Dashboard** (requires Streamlit):
+```bash
+pip install streamlit matplotlib
+streamlit run app/streamlit_app.py
+```
+
+- **Jupyter Notebooks**: Open `notebooks/` for interactive analysis
+
+### Run Tests
 
 ```bash
-pip install -r requirements.txt
-pytest -q
+pytest
 ```
+
+## Project Structure
+
+```
+quant-trading/
+├── qt/                          # Core framework
+│   ├── engine/                  # Simulation engine
+│   ├── strategies/              # Trading strategies
+│   ├── risk/                    # Risk management
+│   ├── analytics/               # Performance analytics
+│   └── utils/                   # Utilities
+├── tools/                       # Demo and analysis scripts
+├── tests/                       # Unit and integration tests
+├── notebooks/                   # Jupyter notebooks
+├── app/                         # Streamlit dashboard
+└── docs/                        # Documentation
+```
+
+## Strategies
+
+### Market Maker
+Implements the Avellaneda & Stoikov model with:
+- EWMA volatility estimation
+- Inventory risk management
+- Adaptive bid-ask spreads
+
+### Pairs Trading
+Statistical arbitrage strategy with:
+- Rolling OLS regression
+- Z-score based entry/exit signals
+- Cointegration testing
+
+## Analytics
+
+- **Performance Metrics**: Sharpe ratio, maximum drawdown, returns
+- **Statistical Tests**: Augmented Dickey-Fuller for stationarity
+- **Confidence Intervals**: Bootstrap resampling for Sharpe ratio
+- **Walk-Forward Analysis**: Out-of-sample validation
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure CI passes
+5. Submit a pull request
+
+## License
+
+See LICENSE file for details.
