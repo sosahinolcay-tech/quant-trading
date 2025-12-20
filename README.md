@@ -56,6 +56,18 @@ streamlit run app/streamlit_app.py
 
 - **Jupyter Notebooks**: Open `notebooks/` for interactive analysis
 
+- **Performance Benchmarks**:
+```bash
+python tools/benchmark_report.py
+```
+
+- **Docker Compose** (optional):
+```bash
+docker-compose up streamlit    # Start dashboard
+docker-compose up jupyter      # Start Jupyter
+docker-compose up quant-trading # Run demo
+```
+
 ### Run Tests
 
 ```bash

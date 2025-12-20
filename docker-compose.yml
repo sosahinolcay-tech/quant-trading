@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  quant-trading:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quant-trading
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python tools/run_demo.py
+
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quant-trading-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: >
+      sh -c "pip install jupyter && 
+             jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --notebook-dir=/app/notebooks"
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quant-trading-dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./app:/app/app
+      - ./notebooks:/app/notebooks
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: >
+      sh -c "pip install streamlit matplotlib && 
+             streamlit run app/streamlit_app.py --server.port=8501 --server.address=0.0.0.0"
+

@@ -1,0 +1,40 @@
+{
+  "timestamp": "2025-12-20 12:04:11",
+  "benchmarks": [
+    {
+      "operation": "engine_initialization",
+      "iterations": 100,
+      "total_time_sec": 0.0003352165222167969,
+      "avg_time_ms": 0.0033521652221679688,
+      "throughput_per_sec": 298314.6514935989
+    },
+    {
+      "operation": "market_maker_demo",
+      "duration_sec": 0.19054698944091797,
+      "events_processed": 400,
+      "trades": 0,
+      "throughput_events_per_sec": 2099.219731435464
+    },
+    {
+      "operation": "pairs_trading_demo",
+      "duration_sec": 0.06552863121032715,
+      "events_processed": 400,
+      "trades": 44,
+      "throughput_events_per_sec": 6104.201974189276
+    },
+    {
+      "operation": "metrics_computation",
+      "iterations": 100,
+      "total_time_sec": 0.02302265167236328,
+      "avg_time_ms": 0.2302265167236328,
+      "throughput_per_sec": 4343.548320284993
+    },
+    {
+      "operation": "order_book_operations",
+      "iterations": 1000,
+      "total_time_sec": 0.003103017807006836,
+      "avg_time_us": 3.103017807006836,
+      "throughput_per_sec": 322266.9227814061
+    }
+  ]
+}

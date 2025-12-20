@@ -1,5 +1,6 @@
 from .event import OrderEvent, FillEvent
 from typing import Literal, Optional, Any
+from ..utils.numba_helpers import calculate_slippage_impact
 
 
 class ExecutionModel:
@@ -37,7 +38,8 @@ class ExecutionModel:
             liquidity = order_book.liquidity_at(price, opp_side)
             liquidity = liquidity if liquidity > 0 else 1.0
         sign = 1.0 if order.side == "BUY" else -1.0
-        slippage = self.slippage_coeff * (qty / liquidity) * price
+        # Use numba-accelerated slippage calculation
+        slippage = calculate_slippage_impact(qty, liquidity, price, self.slippage_coeff)
         executed_price = price + sign * slippage
         fee_amount = float(self.fee) * abs(qty * executed_price)
         return FillEvent(
@@ -64,7 +66,8 @@ class ExecutionModel:
             liquidity = order_book.liquidity_at(p, opp_side)
             liquidity = liquidity if liquidity > 0 else 1.0
         sign = 1.0 if side == "BUY" else -1.0
-        slippage = self.slippage_coeff * (qty / liquidity) * p
+        # Use numba-accelerated slippage calculation
+        slippage = calculate_slippage_impact(qty, liquidity, p, self.slippage_coeff)
         executed_price = p + sign * slippage
         fee_amount = float(self.fee) * abs(qty * executed_price)
         return FillEvent(order_id=order_id, timestamp=timestamp + self.latency_ms / 1000.0,

@@ -1,5 +1,7 @@
 from typing import List, Tuple, Dict, Optional, Union, Any
 from collections import defaultdict, deque
+import numpy as np
+from ..utils.numba_helpers import compute_liquidity_sum, find_best_price_level
 
 
 class OrderBook:
@@ -44,11 +46,20 @@ class OrderBook:
         self.last_price = price
 
     def mid_price(self) -> float:
-        b = self.bid_levels[0] if self.bid_levels else 0.0
-        a = self.ask_levels[0] if self.ask_levels else 0.0
-        if b <= 0 or a <= 0:
-            return self.last_price
-        return (b + a) / 2.0
+        """Calculate mid price from best bid/ask levels.
+        
+        Uses optimized numba function if available for better performance.
+        """
+        if self.bid_levels and self.ask_levels:
+            # Convert to list for numba compatibility
+            import numpy as np
+            bid_array = np.array(self.bid_levels, dtype=np.float64)
+            ask_array = np.array(self.ask_levels, dtype=np.float64)
+            b = find_best_price_level(bid_array, True)
+            a = find_best_price_level(ask_array, False)
+            if b > 0 and a > 0:
+                return (b + a) / 2.0
+        return self.last_price if self.last_price > 0 else 0.0
 
     def _insert_level(self, levels: List[float], price: float, reverse: bool = False):
         if price in levels:
@@ -109,8 +120,18 @@ class OrderBook:
         return order_dict['order_id']
 
     def liquidity_at(self, price: float, side: str) -> float:
+        """Calculate total liquidity at a specific price level.
+        
+        Uses optimized numba function for better performance.
+        """
         lvl = self.bids if side == 'BUY' else self.asks
-        return sum(o['quantity'] for o in lvl.get(price, []))
+        orders = lvl.get(price, [])
+        if not orders:
+            return 0.0
+        # Extract quantities and use numba-accelerated sum
+        import numpy as np
+        quantities = np.array([o['quantity'] for o in orders], dtype=np.float64)
+        return compute_liquidity_sum(quantities)
 
     def process_trade(self, price: float, size: float):
         """Process an incoming market trade at `price` for total `size`.
