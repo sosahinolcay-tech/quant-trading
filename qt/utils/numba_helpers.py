@@ -52,7 +52,7 @@ def find_best_price_level(price_levels, reverse):
     
     Args:
         price_levels: Array-like of price levels (must be numpy array)
-        reverse: If True (1), find maximum (bids), else find minimum (asks)
+        reverse: If True/non-zero, find maximum (bids), else find minimum (asks)
     
     Returns:
         Best price level or 0.0 if empty
@@ -60,10 +60,11 @@ def find_best_price_level(price_levels, reverse):
     n = len(price_levels)
     if n == 0:
         return 0.0
-    best = price_levels[0]
+    best = float(price_levels[0])
+    reverse_bool = bool(reverse)  # Convert to bool for numba compatibility
     for i in range(1, n):
-        price = price_levels[i]
-        if reverse:
+        price = float(price_levels[i])
+        if reverse_bool:
             if price > best:
                 best = price
         else:
