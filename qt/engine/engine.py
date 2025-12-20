@@ -142,17 +142,17 @@ class SimulationEngine:
             if fill_order:
                 # update account and inform strategies
                 try:
-                    self.account.on_fill(fill)
+                    self.account.on_fill(fill_order)
                 except Exception as e:
-                    logger.warning(f"Failed to process fill {fill.order_id} for account: {e}", exc_info=True)
+                    logger.warning(f"Failed to process fill {fill_order.order_id} for account: {e}", exc_info=True)
                 for s in self.strategies:
                     try:
-                        s.on_order_filled(fill)
+                        s.on_order_filled(fill_order)
                     except Exception as e:
-                        logger.warning(f"Strategy {type(s).__name__} failed to process fill {fill.order_id}: {e}", exc_info=True)
+                        logger.warning(f"Strategy {type(s).__name__} failed to process fill {fill_order.order_id}: {e}", exc_info=True)
                 # record trade log and turnover
-                self.trade_log.append({'timestamp': fill.timestamp, 'order_id': fill.order_id, 'symbol': fill.symbol, 'side': fill.side, 'price': fill.price, 'quantity': fill.quantity, 'fee': fill.fee})
-                self.turnover += abs(fill.price * float(fill.quantity))
+                self.trade_log.append({'timestamp': fill_order.timestamp, 'order_id': fill_order.order_id, 'symbol': fill_order.symbol, 'side': fill_order.side, 'price': fill_order.price, 'quantity': fill_order.quantity, 'fee': fill_order.fee})
+                self.turnover += abs(fill_order.price * float(fill_order.quantity))
 
         # after processing orders and fills, record MTM equity using last_prices
         try:
