@@ -50,7 +50,7 @@ class SimpleMarketMaker(StrategyBase):
         if getattr(event, "price", None) and event.price > 0:
             self.prices.append(event.price)
 
-        mid = self.engine.order_books.get(self.symbol, type('Dummy', (), {'mid_price': lambda: self.engine.last_prices.get(self.symbol, 100.0)})()).mid_price()
+        mid = self.engine.order_books.get(self.symbol, type('Dummy', (), {'mid_price': lambda _: self.engine.last_prices.get(self.symbol, 100.0)})()).mid_price()
         if not mid:
             return []
 
@@ -137,7 +137,7 @@ class AvellanedaMarketMaker(SimpleMarketMaker):
             self.prices.append(price)
             self._update_ewma_vol(price)
 
-        mid = self.engine.order_books.get(self.symbol, type('Dummy', (), {'mid_price': lambda: self.engine.last_prices.get(self.symbol, 100.0)})()).mid_price()
+        mid = self.engine.order_books.get(self.symbol, type('Dummy', (), {'mid_price': lambda _: self.engine.last_prices.get(self.symbol, 100.0)})()).mid_price()
         if not mid:
             return []
 

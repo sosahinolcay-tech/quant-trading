@@ -19,7 +19,7 @@ def main():
 
     # try to get equity curve; fallback to last price series
     try:
-        eq = eng.account.get_equity_curve()
+        eq = eng.account.equity_history  # list of (timestamp, equity)
     except Exception:
         eq = []
 
@@ -33,6 +33,16 @@ def main():
     print('Pairs demo summary:', summary)
     print('Trade count:', len(eng.trade_log))
     print('Turnover:', eng.turnover)
+
+    # Save equity curve for plotting
+    if eq:
+        import csv
+        with open('notebooks/equity_pairs_demo.csv', 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['timestamp', 'equity'])
+            for ts, val in eq:
+                writer.writerow([ts, val])
+        print('Equity curve saved to notebooks/equity_pairs_demo.csv')
 
 
 if __name__ == '__main__':
