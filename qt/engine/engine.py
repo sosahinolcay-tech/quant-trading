@@ -7,7 +7,7 @@ from ..risk.accounting import Account
 
 class SimulationEngine:
     def __init__(self, execution_fee: float = 0.0, slippage_coeff: float = 0.0):
-        self.order_book = OrderBook()
+        self.order_books = {}  # symbol -> OrderBook
         # configure execution model and account fees
         self.execution = ExecutionModel(fee=execution_fee, slippage_coeff=slippage_coeff)
         self.strategies = []
@@ -33,8 +33,11 @@ class SimulationEngine:
         beta = 1.5
         y = beta * x + 0.5 + np.random.normal(scale=0.2, size=n)
 
-        # initialize a simple top-of-book for a demo symbol
-        self.order_book.update_from_snapshot([(99.0, 100)], [(101.0, 100)])
+        # initialize a simple top-of-book for demo symbols
+        self.order_books['X'] = OrderBook()
+        self.order_books['X'].update_from_snapshot([(99.0, 100)], [(101.0, 100)])
+        self.order_books['Y'] = OrderBook()
+        self.order_books['Y'].update_from_snapshot([(148.0, 100)], [(152.0, 100)])
 
         for i in range(n):
             evx = MarketEvent(timestamp=float(i), type="TRADE", symbol="X", price=float(x[i]), size=1.0, side=None)
@@ -47,9 +50,9 @@ class SimulationEngine:
         self.last_prices[ev.symbol] = ev.price
         # apply trade to order book (so market trades can hit resting orders)
         if ev.type == "TRADE":
-            self.order_book.apply_trade(ev.price, ev.size)
+            self.order_books.setdefault(ev.symbol, OrderBook()).apply_trade(ev.price, ev.size)
             # process market trade against resting limit orders
-            fills_from_book = self.order_book.process_trade(ev.price, ev.size, symbol=ev.symbol)
+            fills_from_book = self.order_books[ev.symbol].process_trade(ev.price, ev.size)
             for fdict in fills_from_book:
                 # create a FillEvent applying slippage/fee using the ExecutionModel
                 fill = self.execution.fill_from_book(
@@ -58,7 +61,7 @@ class SimulationEngine:
                     price=fdict.get('price'),
                     quantity=fdict.get('quantity'),
                     timestamp=ev.timestamp,
-                    order_book=self.order_book,
+                    order_book=self.order_books[ev.symbol],
                 )
                 # set symbol from trade if available
                 fill.symbol = ev.symbol
@@ -80,7 +83,7 @@ class SimulationEngine:
 
         # process orders (limit orders will be added to the book; market orders may fill immediately)
         for o in orders:
-            fill = self.execution.simulate_fill(o, order_book=self.order_book)
+            fill = self.execution.simulate_fill(o, order_book=self.order_books.get(o.symbol))
             if fill:
                 # update account and inform strategies
                 try:
