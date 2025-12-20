@@ -104,7 +104,7 @@ class SimulationEngine:
             fills_from_book = self.order_books[ev.symbol].process_trade(ev.price, ev.size)
             for fdict in fills_from_book:
                 # create a FillEvent applying slippage/fee using the ExecutionModel
-                fill = self.execution.fill_from_book(
+                fill_from_book: FillEvent = self.execution.fill_from_book(
                     order_id=fdict.get('order_id'),
                     side=fdict.get('side'),
                     price=fdict.get('price'),
@@ -113,20 +113,20 @@ class SimulationEngine:
                     order_book=self.order_books[ev.symbol],
                 )
                 # set symbol from trade if available
-                fill.symbol = ev.symbol
+                fill_from_book.symbol = ev.symbol
                 # account and notify
                 try:
-                    self.account.on_fill(fill)
+                    self.account.on_fill(fill_from_book)
                 except Exception as e:
-                    logger.warning(f"Failed to process fill {fill.order_id} for account: {e}", exc_info=True)
+                    logger.warning(f"Failed to process fill {fill_from_book.order_id} for account: {e}", exc_info=True)
                 for s in self.strategies:
                     try:
-                        s.on_order_filled(fill)
+                        s.on_order_filled(fill_from_book)
                     except Exception as e:
-                        logger.warning(f"Strategy {type(s).__name__} failed to process fill {fill.order_id}: {e}", exc_info=True)
+                        logger.warning(f"Strategy {type(s).__name__} failed to process fill {fill_from_book.order_id}: {e}", exc_info=True)
                 # record trade log and turnover
-                self.trade_log.append({'timestamp': fill.timestamp, 'order_id': fill.order_id, 'symbol': fill.symbol, 'side': fill.side, 'price': fill.price, 'quantity': fill.quantity, 'fee': fill.fee})
-                self.turnover += abs(fill.price * fill.quantity)
+                self.trade_log.append({'timestamp': fill_from_book.timestamp, 'order_id': fill_from_book.order_id, 'symbol': fill_from_book.symbol, 'side': fill_from_book.side, 'price': fill_from_book.price, 'quantity': fill_from_book.quantity, 'fee': fill_from_book.fee})
+                self.turnover += abs(fill_from_book.price * fill_from_book.quantity)
 
         # give event to strategies
         orders = []
@@ -138,8 +138,8 @@ class SimulationEngine:
             # Ensure order book exists for the symbol
             if o.symbol not in self.order_books:
                 self.order_books[o.symbol] = OrderBook()
-            fill: Optional[FillEvent] = self.execution.simulate_fill(o, order_book=self.order_books.get(o.symbol))
-            if fill:
+            fill_order: Optional[FillEvent] = self.execution.simulate_fill(o, order_book=self.order_books.get(o.symbol))
+            if fill_order:
                 # update account and inform strategies
                 try:
                     self.account.on_fill(fill)

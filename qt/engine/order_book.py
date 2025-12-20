@@ -124,8 +124,7 @@ class OrderBook:
             # asks: ascending
             self.asks[price].append(order_dict)
             self._insert_level(self.ask_levels, price, reverse=False)
-        order_id: str = str(order_dict['order_id'])
-        return order_id
+        return str(order_dict['order_id'])
 
     def liquidity_at(self, price: float, side: str) -> float:
         """Calculate total liquidity at a specific price level.
@@ -134,16 +133,16 @@ class OrderBook:
         Falls back to simple sum if numba fails.
         """
         lvl = self.bids if side == 'BUY' else self.asks
-        orders: List[Dict[str, Any]] = lvl.get(price, [])
-        if not orders:
+        orders_list: List[Dict[str, Any]] = list(lvl.get(price, []))
+        if not orders_list:
             return 0.0
         try:
             # Try numba-accelerated version
-            quantities = np.array([o['quantity'] for o in orders], dtype=np.float64)
+            quantities = np.array([o['quantity'] for o in orders_list], dtype=np.float64)
             return compute_liquidity_sum(quantities)
         except Exception:
             # Fallback to simple Python sum
-            return sum(o['quantity'] for o in orders)
+            return sum(o['quantity'] for o in orders_list)
 
     def process_trade(self, price: float, size: float):
         """Process an incoming market trade at `price` for total `size`.
