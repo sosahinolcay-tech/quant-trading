@@ -162,6 +162,13 @@ Statistical arbitrage strategy with:
 - **Confidence Intervals**: Bootstrap resampling for Sharpe ratio
 - **Walk-Forward Analysis**: Out-of-sample validation
 
+## Documentation
+
+- **[Final Report](docs/FINAL_REPORT.md)** - Comprehensive project report with results and analysis
+- **[Final Report (HTML)](docs/FINAL_REPORT.html)** - HTML version of final report
+- **[Case Study](docs/case_study.md)** - Strategy methodology and results
+- **[Week 5 Risk Analytics](docs/week5_risk.md)** - Risk analytics documentation
+
 ## Contributing
 
 1. Fork the repository
