@@ -62,6 +62,56 @@ streamlit run app/streamlit_app.py
 pytest
 ```
 
+## Architecture
+
+```mermaid
+graph TB
+    subgraph "Data Sources"
+        DS[Data Sources]
+        DS --> |Historical Prices| SYN[Synthetic Data]
+        DS --> |Live Data| YF[Yahoo Finance]
+    end
+    
+    subgraph "Simulation Engine"
+        ENG[SimulationEngine]
+        OB[OrderBook]
+        EX[ExecutionModel]
+        ENG --> OB
+        ENG --> EX
+        ENG --> |Events| STRAT[Strategies]
+    end
+    
+    subgraph "Trading Strategies"
+        STRAT --> MM[Market Maker]
+        STRAT --> PAIRS[Pairs Trading]
+        MM --> |Orders| ENG
+        PAIRS --> |Orders| ENG
+    end
+    
+    subgraph "Risk & Accounting"
+        ACC[Account]
+        EX --> |Fills| ACC
+        ACC --> |Equity| METRICS[Metrics]
+    end
+    
+    subgraph "Analytics"
+        METRICS --> PERF[Performance]
+        METRICS --> RISK[Risk Analytics]
+        METRICS --> STAT[Statistics]
+        PERF --> |Sharpe, Drawdown| REP[Reports]
+        RISK --> |VaR, CVaR| REP
+        STAT --> |ADF, Bootstrap| REP
+    end
+    
+    subgraph "Visualization"
+        REP --> DASH[Streamlit Dashboard]
+        REP --> NB[Jupyter Notebooks]
+    end
+    
+    DS --> ENG
+    ENG --> ACC
+```
+
 ## Project Structure
 
 ```

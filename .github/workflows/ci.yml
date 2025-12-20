@@ -24,6 +24,11 @@ jobs:
         run: mypy qt --ignore-missing-imports
       - name: Run tests with coverage
         run: pytest --cov=qt --cov-report=xml
+      - name: Run backtest smoke test
+        run: |
+          python tools/run_demo.py
+          python tools/demo_pairs.py
+          echo "✓ Backtest smoke tests passed"
       - name: Upload coverage to Codecov
         if: env.CODECOV_TOKEN
         uses: codecov/codecov-action@v3

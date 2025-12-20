@@ -21,8 +21,8 @@ def main():
     # get equity curve from account
     eq = eng.account.get_equity_curve()
     if not eq:
-        # fallback to last price if nothing recorded
-        eq = [100.0, eng.order_book.last_price]
+        # fallback to initial cash if nothing recorded
+        eq = [eng.account.cash, eng.account.cash]
     summary = summary_report(eq, out_csv_path='notebooks/summary_metrics.csv')
     print("Wrote notebooks/summary_metrics.csv ->", summary)
 
