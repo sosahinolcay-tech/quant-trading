@@ -54,7 +54,6 @@ class OrderBook:
         if self.bid_levels and self.ask_levels:
             try:
                 # Try numba-accelerated version
-                import numpy as np
                 bid_array = np.array(self.bid_levels, dtype=np.float64)
                 ask_array = np.array(self.ask_levels, dtype=np.float64)
                 b = find_best_price_level(bid_array, True)
@@ -139,7 +138,6 @@ class OrderBook:
             return 0.0
         try:
             # Try numba-accelerated version
-            import numpy as np
             quantities = np.array([o['quantity'] for o in orders], dtype=np.float64)
             return compute_liquidity_sum(quantities)
         except Exception:
