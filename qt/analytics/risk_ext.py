@@ -4,6 +4,7 @@ and a lightweight GARCH-like simulator.
 from typing import Any, Dict, Sequence
 
 import numpy as np
+from typing import List
 
 
 def multi_asset_monte_carlo_var(returns_matrix, weights, portfolio_value: float = 1.0,

@@ -6,6 +6,7 @@ methods for tail-risk estimation.
 """
 from typing import Any, Dict
 import numpy as np
+from typing import List
 
 
 def compute_var(returns, alpha: float = 0.05, method: str = "historical", simulations: int = 10000) -> float:
