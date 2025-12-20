@@ -1,6 +1,9 @@
 # Quant Trading Framework
 
 [![CI](https://github.com/sosahinolcay-tech/quant-trading/actions/workflows/ci.yml/badge.svg)](https://github.com/sosahinolcay-tech/quant-trading/actions)
+[![codecov](https://codecov.io/gh/sosahinolcay-tech/quant-trading/branch/main/graph/badge.svg)](https://codecov.io/gh/sosahinolcay-tech/quant-trading)
+[![PyPI version](https://badge.fury.io/py/quant-trading.svg)](https://pypi.org/project/quant-trading/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A comprehensive event-driven quantitative trading simulator built in Python. This framework includes multiple trading strategies, backtesting engine, risk management, analytics, and performance evaluation tools.
 

@@ -22,28 +22,71 @@ class SimulationEngine:
         self.strategies.append(strat)
         strat.on_init(self)
 
-    def run_demo(self):
-        # multi-symbol synthetic demo for market-maker and pairs
-        import numpy as np
-        np.random.seed(42)
-        n = 200
-        t = np.arange(n)
-        # build two cointegrated series
-        x = np.cumsum(np.random.normal(scale=0.1, size=n)) + 100.0
-        beta = 1.5
-        y = beta * x + 0.5 + np.random.normal(scale=0.2, size=n)
+    def run_demo(self, data_source=None):
+        # multi-symbol demo for market-maker and pairs
+        if data_source is None:
+            # Use synthetic data (original behavior)
+            import numpy as np
+            np.random.seed(42)
+            n = 200
+            t = np.arange(n)
+            # build two cointegrated series
+            x = np.cumsum(np.random.normal(scale=0.1, size=n)) + 100.0
+            beta = 1.5
+            y = beta * x + 0.5 + np.random.normal(scale=0.2, size=n)
 
-        # initialize a simple top-of-book for demo symbols
-        self.order_books['X'] = OrderBook()
-        self.order_books['X'].update_from_snapshot([(99.0, 100)], [(101.0, 100)])
-        self.order_books['Y'] = OrderBook()
-        self.order_books['Y'].update_from_snapshot([(148.0, 100)], [(152.0, 100)])
+            # initialize a simple top-of-book for demo symbols
+            self.order_books['X'] = OrderBook()
+            self.order_books['X'].update_from_snapshot([(99.0, 100)], [(101.0, 100)])
+            self.order_books['Y'] = OrderBook()
+            self.order_books['Y'].update_from_snapshot([(148.0, 100)], [(152.0, 100)])
 
-        for i in range(n):
-            evx = MarketEvent(timestamp=float(i), type="TRADE", symbol="X", price=float(x[i]), size=1.0, side=None)
-            evy = MarketEvent(timestamp=float(i), type="TRADE", symbol="Y", price=float(y[i]), size=1.0, side=None)
-            self._process_market_event(evx)
-            self._process_market_event(evy)
+            for i in range(n):
+                evx = MarketEvent(timestamp=float(i), type="TRADE", symbol="X", price=float(x[i]), size=1.0, side=None)
+                evy = MarketEvent(timestamp=float(i), type="TRADE", symbol="Y", price=float(y[i]), size=1.0, side=None)
+                self._process_market_event(evx)
+                self._process_market_event(evy)
+        else:
+            # Use real data from data_source
+            from ..data import get_data_source
+            ds = get_data_source(data_source) if isinstance(data_source, str) else data_source
+
+            # Get data for symbols used by strategies
+            symbols = set()
+            for strat in self.strategies:
+                if hasattr(strat, 'symbol'):
+                    symbols.add(strat.symbol)
+                elif hasattr(strat, 'symbol_x') and hasattr(strat, 'symbol_y'):
+                    symbols.add(strat.symbol_x)
+                    symbols.add(strat.symbol_y)
+
+            # Default date range
+            start_date = "2023-01-01"
+            end_date = "2024-01-01"
+
+            for symbol in symbols:
+                df = ds.get_prices(symbol, start_date, end_date)
+                if df is not None and not df.empty:
+                    # Initialize order book
+                    self.order_books[symbol] = OrderBook()
+                    # Use last price for initial book
+                    last_price = df['price'].iloc[-1]
+                    spread = last_price * 0.01  # 1% spread
+                    bid = last_price - spread/2
+                    ask = last_price + spread/2
+                    self.order_books[symbol].update_from_snapshot([(bid, 100)], [(ask, 100)])
+
+                    # Generate events
+                    for _, row in df.iterrows():
+                        ev = MarketEvent(
+                            timestamp=float(row['timestamp']),
+                            type="TRADE",
+                            symbol=symbol,
+                            price=float(row['price']),
+                            size=1.0,
+                            side=None
+                        )
+                        self._process_market_event(ev)
 
     def _process_market_event(self, ev: MarketEvent):
         # record last price per symbol
