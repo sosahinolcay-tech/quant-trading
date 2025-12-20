@@ -1,5 +1,5 @@
 """Data sources for real market data"""
-from typing import List, Tuple, Optional
+from typing import Optional
 import pandas as pd
 import numpy as np
 

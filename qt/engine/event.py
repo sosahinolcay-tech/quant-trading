@@ -27,7 +27,7 @@ class OrderEvent:
 class FillEvent:
     order_id: str
     timestamp: float
-    symbol: str
+    symbol: Optional[str]
     side: Literal["BUY", "SELL"]
     price: float
     quantity: float

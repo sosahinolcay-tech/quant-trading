@@ -1,4 +1,5 @@
 from .event import OrderEvent, FillEvent
+from typing import Literal
 
 
 class ExecutionModel:
@@ -49,7 +50,7 @@ class ExecutionModel:
             fee=fee_amount,
         )
 
-    def fill_from_book(self, order_id: str, side: str, price: float, quantity: float, timestamp: float, order_book=None) -> FillEvent:
+    def fill_from_book(self, order_id: str, side: Literal["BUY", "SELL"], price: float, quantity: float, timestamp: float, order_book=None) -> FillEvent:
         """Create a FillEvent for a resting order matched by a market trade.
 
         Uses the order_book to infer liquidity at the price and apply slippage

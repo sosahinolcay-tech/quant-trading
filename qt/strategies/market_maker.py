@@ -13,8 +13,7 @@ from .base import StrategyBase
 import collections
 import math
 import time
-from typing import Optional
-import numpy as np
+from typing import Optional, Deque
 
 
 class SimpleMarketMaker(StrategyBase):
@@ -31,7 +30,7 @@ class SimpleMarketMaker(StrategyBase):
         self.inventory_coeff = inventory_coeff
         self.vol_window = vol_window
         self._order_seq = 0
-        self.prices = collections.deque(maxlen=vol_window)
+        self.prices: Deque[float] = collections.deque(maxlen=vol_window)
         self.inventory = 0.0
 
     def _next_order_id(self):
@@ -41,8 +40,8 @@ class SimpleMarketMaker(StrategyBase):
     def _estimate_vol(self):
         if len(self.prices) < 2:
             return 0.0
-        rets = [ (self.prices[i+1] / self.prices[i] - 1.0) for i in range(len(self.prices)-1) ]
-        vol = (sum((r - (sum(rets)/len(rets)))**2 for r in rets) / (len(rets)-1))**0.5 if len(rets)>1 else 0.0
+        rets = [(self.prices[i+1] / self.prices[i] - 1.0) for i in range(len(self.prices)-1)]
+        vol = (sum((r - (sum(rets)/len(rets)))**2 for r in rets) / (len(rets)-1))**0.5 if len(rets) > 1 else 0.0
         return vol * math.sqrt(252)
 
     def on_market_event(self, event):
@@ -182,5 +181,6 @@ class AvellanedaMarketMaker(SimpleMarketMaker):
     def on_order_filled(self, fill):
         # update inventory same as base class but respect direction
         super().on_order_filled(fill)
+
 
 

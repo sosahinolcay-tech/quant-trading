@@ -1,4 +1,3 @@
-import pytest
 from qt.strategies.pairs import PairsStrategy
 from qt.engine.event import MarketEvent
 

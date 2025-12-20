@@ -1,5 +1,4 @@
 from .base import StrategyBase
-from ..analytics.statistics import adf_test
 from ..engine.event import OrderEvent
 import numpy as np
 from typing import Deque
@@ -115,4 +114,5 @@ class PairsStrategy(StrategyBase):
                 self.inventory_y += fill.quantity
             else:
                 self.inventory_y -= fill.quantity
+
 

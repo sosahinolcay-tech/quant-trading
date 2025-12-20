@@ -21,7 +21,10 @@ class OrderBook:
 
     def update_from_snapshot(self, bids: List[Tuple[float, float]], asks: List[Tuple[float, float]]):
         # initialize top-of-book from snapshot
-        self.bids.clear(); self.asks.clear(); self.bid_levels.clear(); self.ask_levels.clear()
+        self.bids.clear()
+        self.asks.clear()
+        self.bid_levels.clear()
+        self.ask_levels.clear()
         for p, s in bids:
             self.bid_levels.append(p)
             # seed with a synthetic liquidity order representing displayed depth
@@ -92,7 +95,7 @@ class OrderBook:
         lvl = self.bids if side == 'BUY' else self.asks
         return sum(o['quantity'] for o in lvl.get(price, []))
 
-    def process_trade(self, price: float, size: float, symbol: str = None):
+    def process_trade(self, price: float, size: float):
         """Process an incoming market trade at `price` for total `size`.
 
         This will match against resting limit orders at that price level

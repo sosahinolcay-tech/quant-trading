@@ -99,8 +99,6 @@ def full_report(equity_history, trade_log=None, out_csv_path="summary_metrics.cs
         return {"sharpe": sharpe, "max_drawdown": dd["max_drawdown"]}
 
     # otherwise assume list of (ts, equity)
-    days = daily_summary(equity_history, out_csv_path=None)
-    weeks = weekly_summary(equity_history, out_csv_path=None)
     # overall
     equities = [eq for (_ts, eq) in equity_history]
     rets = compute_returns(equities)

@@ -8,12 +8,11 @@ version = "0.1.0"
 authors = [ { name = "Auto", email = "auto@example.com" } ]
 description = "Comprehensive event-driven quantitative trading simulator with market making and pairs trading strategies"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Financial and Insurance Industry",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -50,6 +49,7 @@ data = [
 ]
 
 [project.scripts]
+qt = "qt.cli:cli"
 qt-demo = "qt.cli:cli"
 
 [project.urls]

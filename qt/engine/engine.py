@@ -1,5 +1,5 @@
-from typing import List
-from ..engine.event import MarketEvent, OrderEvent, FillEvent
+from typing import List, Dict, Any
+from ..engine.event import MarketEvent
 from .order_book import OrderBook
 from .execution import ExecutionModel
 from ..risk.accounting import Account
@@ -7,15 +7,15 @@ from ..risk.accounting import Account
 
 class SimulationEngine:
     def __init__(self, execution_fee: float = 0.0, slippage_coeff: float = 0.0):
-        self.order_books = {}  # symbol -> OrderBook
+        self.order_books: Dict[str, OrderBook] = {}  # symbol -> OrderBook
         # configure execution model and account fees
         self.execution = ExecutionModel(fee=execution_fee, slippage_coeff=slippage_coeff)
-        self.strategies = []
+        self.strategies: List[Any] = []
         self.time = 0.0
-        self.last_prices = {}
+        self.last_prices: Dict[str, float] = {}
         self.account = Account(fee=execution_fee)
         # runtime trade log and turnover
-        self.trade_log = []
+        self.trade_log: List[Dict[str, Any]] = []
         self.turnover = 0.0
 
     def register_strategy(self, strat):
@@ -29,7 +29,6 @@ class SimulationEngine:
             import numpy as np
             np.random.seed(42)
             n = 200
-            t = np.arange(n)
             # build two cointegrated series
             x = np.cumsum(np.random.normal(scale=0.1, size=n)) + 100.0
             beta = 1.5
