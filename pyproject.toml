@@ -50,7 +50,7 @@ data = [
 ]
 
 [project.scripts]
-qt-demo = "qt.cli:main"
+qt-demo = "qt.cli:cli"
 
 [project.urls]
 Homepage = "https://github.com/sosahinolcay-tech/quant-trading"
