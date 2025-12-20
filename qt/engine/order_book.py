@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional, Union
 from collections import defaultdict, deque
 
 
@@ -26,10 +26,14 @@ class OrderBook:
         self.bid_levels.clear()
         self.ask_levels.clear()
         for p, s in bids:
+            if p <= 0 or s <= 0:
+                continue  # Skip invalid orders
             self.bid_levels.append(p)
             # seed with a synthetic liquidity order representing displayed depth
-            self.bids[p].append({'order_id': f'snap-bid-{int(p*100)}', 'price': p, 'quantity': s, 'side': 'SELL'})
+            self.bids[p].append({'order_id': f'snap-bid-{int(p*100)}', 'price': p, 'quantity': s, 'side': 'BUY'})
         for p, s in asks:
+            if p <= 0 or s <= 0:
+                continue  # Skip invalid orders
             self.ask_levels.append(p)
             self.asks[p].append({'order_id': f'snap-ask-{int(p*100)}', 'price': p, 'quantity': s, 'side': 'SELL'})
         self.bid_levels.sort(reverse=True)
@@ -52,7 +56,7 @@ class OrderBook:
         levels.append(price)
         levels.sort(reverse=reverse)
 
-    def add_limit_order(self, order, price=None, qty=None) -> str:
+    def add_limit_order(self, order: Union[str, Any], price: Optional[float] = None, qty: Optional[float] = None) -> str:
         """Add a limit order to the book.
 
         Supports two call styles for backward compatibility:
@@ -60,18 +64,31 @@ class OrderBook:
         - add_limit_order(side, price=..., qty=...)
 
         Returns the order_id.
+        
+        Raises:
+            ValueError: If price or quantity is invalid (<= 0).
         """
         # backward compatible call: add_limit_order('BUY', price=100.0, qty=5)
         if isinstance(order, str):
             side = order
-            price = float(price)
-            qty = float(qty)
+            price = float(price) if price is not None else 0.0
+            qty = float(qty) if qty is not None else 0.0
+            # Validate inputs
+            if price <= 0:
+                raise ValueError(f"Invalid price: {price}. Price must be positive.")
+            if qty <= 0:
+                raise ValueError(f"Invalid quantity: {qty}. Quantity must be positive.")
             # synthesize an order id
             order_id = f"legacy-{int(price*100)}-{int(qty)}"
             order_dict = {'order_id': order_id, 'price': price, 'quantity': qty, 'side': side, 'symbol': None, 'timestamp': 0.0}
         else:
             price = float(order.price)
             qty = float(order.quantity)
+            # Validate inputs
+            if price <= 0:
+                raise ValueError(f"Invalid price: {price}. Price must be positive.")
+            if qty <= 0:
+                raise ValueError(f"Invalid quantity: {qty}. Quantity must be positive.")
             side = order.side
             order_dict = {
                 'order_id': order.order_id,

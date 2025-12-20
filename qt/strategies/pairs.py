@@ -1,8 +1,11 @@
 from .base import StrategyBase
 from ..engine.event import OrderEvent
 import numpy as np
-from typing import Deque
+from typing import Deque, Optional
 import collections
+from ..utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class PairsStrategy(StrategyBase):
@@ -60,9 +63,18 @@ class PairsStrategy(StrategyBase):
         # only append if values are present
         if px is not None and py is not None:
             try:
-                self.prices_x.append(float(px))
-                self.prices_y.append(float(py))
-            except Exception:
+                px_float = float(px)
+                py_float = float(py)
+                if px_float <= 0 or py_float <= 0:
+                    logger.warning(f"Invalid prices: px={px_float}, py={py_float}. Skipping update.")
+                    return []
+                self.prices_x.append(px_float)
+                self.prices_y.append(py_float)
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Failed to convert prices to float: px={px}, py={py}, error={e}")
+                return []
+            except Exception as e:
+                logger.error(f"Unexpected error processing prices: {e}", exc_info=True)
                 return []
         if len(self.prices_x) >= self.window and len(self.prices_y) >= self.window:
             self._fit_ols()

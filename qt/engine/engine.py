@@ -1,8 +1,14 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from ..engine.event import MarketEvent
 from .order_book import OrderBook
 from .execution import ExecutionModel
 from ..risk.accounting import Account
+from ..utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+# Constants
+DEFAULT_SPREAD_PCT = 0.01  # 1% default spread
 
 
 class SimulationEngine:
@@ -18,7 +24,8 @@ class SimulationEngine:
         self.trade_log: List[Dict[str, Any]] = []
         self.turnover = 0.0
 
-    def register_strategy(self, strat):
+    def register_strategy(self, strat: Any) -> None:
+        """Register a trading strategy with the engine."""
         self.strategies.append(strat)
         strat.on_init(self)
 
@@ -70,18 +77,18 @@ class SimulationEngine:
                     self.order_books[symbol] = OrderBook()
                     # Use last price for initial book
                     last_price = df['price'].iloc[-1]
-                    spread = last_price * 0.01  # 1% spread
+                    spread = last_price * DEFAULT_SPREAD_PCT
                     bid = last_price - spread/2
                     ask = last_price + spread/2
                     self.order_books[symbol].update_from_snapshot([(bid, 100)], [(ask, 100)])
 
-                    # Generate events
-                    for _, row in df.iterrows():
+                    # Generate events - use itertuples for better performance
+                    for row in df.itertuples():
                         ev = MarketEvent(
-                            timestamp=float(row['timestamp']),
+                            timestamp=float(row.timestamp),
                             type="TRADE",
                             symbol=symbol,
-                            price=float(row['price']),
+                            price=float(row.price),
                             size=1.0,
                             side=None
                         )
@@ -110,10 +117,13 @@ class SimulationEngine:
                 # account and notify
                 try:
                     self.account.on_fill(fill)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to process fill {fill.order_id} for account: {e}", exc_info=True)
                 for s in self.strategies:
-                    s.on_order_filled(fill)
+                    try:
+                        s.on_order_filled(fill)
+                    except Exception as e:
+                        logger.warning(f"Strategy {type(s).__name__} failed to process fill {fill.order_id}: {e}", exc_info=True)
                 # record trade log and turnover
                 self.trade_log.append({'timestamp': fill.timestamp, 'order_id': fill.order_id, 'symbol': fill.symbol, 'side': fill.side, 'price': fill.price, 'quantity': fill.quantity, 'fee': fill.fee})
                 self.turnover += abs(fill.price * fill.quantity)
@@ -130,10 +140,13 @@ class SimulationEngine:
                 # update account and inform strategies
                 try:
                     self.account.on_fill(fill)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to process fill {fill.order_id} for account: {e}", exc_info=True)
                 for s in self.strategies:
-                    s.on_order_filled(fill)
+                    try:
+                        s.on_order_filled(fill)
+                    except Exception as e:
+                        logger.warning(f"Strategy {type(s).__name__} failed to process fill {fill.order_id}: {e}", exc_info=True)
                 # record trade log and turnover
                 self.trade_log.append({'timestamp': fill.timestamp, 'order_id': fill.order_id, 'symbol': fill.symbol, 'side': fill.side, 'price': fill.price, 'quantity': fill.quantity, 'fee': fill.fee})
                 self.turnover += abs(fill.price * float(fill.quantity))
@@ -141,6 +154,6 @@ class SimulationEngine:
         # after processing orders and fills, record MTM equity using last_prices
         try:
             self.account.mark_to_market(ev.timestamp, self.last_prices)
-        except Exception:
-            # be tolerant in demo mode
-            pass
+        except Exception as e:
+            # be tolerant in demo mode but log for debugging
+            logger.debug(f"Mark-to-market failed at timestamp {ev.timestamp}: {e}", exc_info=True)

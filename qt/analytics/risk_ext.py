@@ -33,6 +33,11 @@ def multi_asset_monte_carlo_var(returns_matrix, weights, portfolio_value: float 
 
     mu = np.mean(rets, axis=0)
     cov = np.cov(rets, rowvar=False)
+    
+    # Validate covariance matrix is positive semi-definite
+    if not np.all(np.linalg.eigvals(cov) >= -1e-10):
+        # If not PSD, make it PSD by adding small regularization
+        cov = cov + np.eye(N) * 1e-10
 
     # draw sims x horizon x N multivariate normals
     sims = np.random.multivariate_normal(mean=mu, cov=cov, size=(simulations, horizon))
@@ -88,6 +93,7 @@ def apply_historical_scenario_to_portfolio(weights: Sequence[float], initial_por
         equity.append(equity[-1] * (1.0 + port_ret))
     equity = np.array(equity, dtype=float)
     hwm = np.maximum.accumulate(equity)
+    hwm = np.maximum(hwm, 1e-10)  # Prevent division by zero
     drawdown = (equity - hwm) / hwm
     max_dd = float(np.min(drawdown)) if drawdown.size > 0 else 0.0
     return {"stressed_equity": equity.tolist(), "max_drawdown": max_dd, "final_equity": float(equity[-1])}

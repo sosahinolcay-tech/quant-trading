@@ -1,5 +1,5 @@
 from .event import OrderEvent, FillEvent
-from typing import Literal
+from typing import Literal, Optional
 
 
 class ExecutionModel:
@@ -17,7 +17,7 @@ class ExecutionModel:
         # slippage coefficient governs impact: fraction of price * (qty / liquidity)
         self.slippage_coeff = float(slippage_coeff)
 
-    def simulate_fill(self, order: OrderEvent, order_book=None):
+    def simulate_fill(self, order: OrderEvent, order_book: Optional[Any] = None) -> Optional[FillEvent]:
         # If it's a limit order, add to the book and return None (resting)
         if order.order_type == "LIMIT":
             if order_book is None:
@@ -50,7 +50,7 @@ class ExecutionModel:
             fee=fee_amount,
         )
 
-    def fill_from_book(self, order_id: str, side: Literal["BUY", "SELL"], price: float, quantity: float, timestamp: float, order_book=None) -> FillEvent:
+    def fill_from_book(self, order_id: str, side: Literal["BUY", "SELL"], price: float, quantity: float, timestamp: float, order_book: Optional[Any] = None) -> FillEvent:
         """Create a FillEvent for a resting order matched by a market trade.
 
         Uses the order_book to infer liquidity at the price and apply slippage

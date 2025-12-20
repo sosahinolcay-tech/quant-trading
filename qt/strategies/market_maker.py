@@ -13,7 +13,11 @@ from .base import StrategyBase
 import collections
 import math
 import time
-from typing import Optional, Deque
+from typing import Optional, Deque, Any
+
+# Constants
+TRADING_DAYS_PER_YEAR = 252
+MIN_TICK_SIZE = 1e-8
 
 
 class SimpleMarketMaker(StrategyBase):
@@ -42,7 +46,7 @@ class SimpleMarketMaker(StrategyBase):
             return 0.0
         rets = [(self.prices[i+1] / self.prices[i] - 1.0) for i in range(len(self.prices)-1)]
         vol = (sum((r - (sum(rets)/len(rets)))**2 for r in rets) / (len(rets)-1))**0.5 if len(rets) > 1 else 0.0
-        return vol * math.sqrt(252)
+        return vol * math.sqrt(TRADING_DAYS_PER_YEAR)
 
     def on_market_event(self, event):
         # update price history for vol estimate
@@ -159,7 +163,7 @@ class AvellanedaMarketMaker(SimpleMarketMaker):
         ask = r + half
 
         # safety clipping: avoid negative or crossed quotes
-        min_tick = max(1e-8, mid * 1e-6)
+        min_tick = max(MIN_TICK_SIZE, mid * 1e-6)
         bid = max(bid, min_tick)
         ask = max(ask, bid + min_tick)
 

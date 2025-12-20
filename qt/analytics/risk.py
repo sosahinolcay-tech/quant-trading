@@ -127,7 +127,8 @@ def stress_test_equity(equity_curve, shock_pct: float = -0.3) -> Dict[str, Any]:
         return {"stressed_equity": [], "max_drawdown": 0.0, "final_equity": None}
 
     # compute returns and apply shock to the last return as a simple scenario
-    rets = eq[1:] / eq[:-1] - 1.0
+    eq_prev = np.maximum(eq[:-1], 1e-10)  # Prevent division by zero
+    rets = eq[1:] / eq_prev - 1.0
     shocked_rets = rets.copy()
     if shocked_rets.size > 0:
         shocked_rets[-1] = shocked_rets[-1] + shock_pct
@@ -139,6 +140,7 @@ def stress_test_equity(equity_curve, shock_pct: float = -0.3) -> Dict[str, Any]:
 
     # compute drawdown
     hwm = np.maximum.accumulate(stressed)
+    hwm = np.maximum(hwm, 1e-10)  # Prevent division by zero
     drawdown = (stressed - hwm) / hwm
     max_dd = float(np.min(drawdown)) if drawdown.size > 0 else 0.0
 
