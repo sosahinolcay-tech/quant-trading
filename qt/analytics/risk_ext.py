@@ -87,11 +87,11 @@ def apply_historical_scenario_to_portfolio(weights: Sequence[float], initial_por
     if w.shape[0] != N:
         raise ValueError('weights length must match scenario asset dimension')
 
-    equity = [float(initial_portfolio_value)]
+    equity_list: List[float] = [float(initial_portfolio_value)]
     for t in range(horizon):
         port_ret = float(np.dot(scen[t, :], w))
-        equity.append(equity[-1] * (1.0 + port_ret))
-    equity = np.array(equity, dtype=float)
+        equity_list.append(equity_list[-1] * (1.0 + port_ret))
+    equity: np.ndarray = np.array(equity_list, dtype=float)
     hwm = np.maximum.accumulate(equity)
     hwm = np.maximum(hwm, 1e-10)  # Prevent division by zero
     drawdown = (equity - hwm) / hwm

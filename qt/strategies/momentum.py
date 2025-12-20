@@ -5,7 +5,7 @@ and uses a provided model wrapper with `predict` to create a signal.
 If no model is provided, it falls back to a pure momentum rule.
 """
 
-from typing import Optional, List
+from typing import Optional, List, Literal
 from .base import StrategyBase
 from ..engine.event import OrderEvent
 from ..ml.pipeline import FeatureBuilder, SimpleModelWrapper
@@ -18,7 +18,7 @@ class MomentumModelStrategy(StrategyBase):
         super().__init__(symbol)
         self.window = window
         self.size = size
-        self.prices = []
+        self.prices: List[float] = []
         self.model = model
         self.fb = FeatureBuilder(window=window)
 
@@ -49,7 +49,7 @@ class MomentumModelStrategy(StrategyBase):
         if sig == 0.0:
             return []
 
-        side = "BUY" if sig > 0 else "SELL"
+        side: Literal["BUY", "SELL"] = "BUY" if sig > 0 else "SELL"
         t = getattr(event, "timestamp", time.time())
         order = OrderEvent(order_id=f"mom-1", timestamp=t, symbol=self.symbol, side=side, price=price, quantity=self.size, order_type="MARKET")
         return [order]

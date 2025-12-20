@@ -124,7 +124,8 @@ class OrderBook:
             # asks: ascending
             self.asks[price].append(order_dict)
             self._insert_level(self.ask_levels, price, reverse=False)
-        return order_dict['order_id']
+        order_id: str = str(order_dict['order_id'])
+        return order_id
 
     def liquidity_at(self, price: float, side: str) -> float:
         """Calculate total liquidity at a specific price level.
@@ -133,7 +134,7 @@ class OrderBook:
         Falls back to simple sum if numba fails.
         """
         lvl = self.bids if side == 'BUY' else self.asks
-        orders = lvl.get(price, [])
+        orders: List[Dict[str, Any]] = lvl.get(price, [])
         if not orders:
             return 0.0
         try:

@@ -133,10 +133,10 @@ def stress_test_equity(equity_curve, shock_pct: float = -0.3) -> Dict[str, Any]:
     if shocked_rets.size > 0:
         shocked_rets[-1] = shocked_rets[-1] + shock_pct
 
-    stressed = [eq[0]]
+    stressed_list: List[float] = [eq[0]]
     for r in shocked_rets:
-        stressed.append(stressed[-1] * (1.0 + r))
-    stressed = np.array(stressed, dtype=float)
+        stressed_list.append(stressed_list[-1] * (1.0 + r))
+    stressed: np.ndarray = np.array(stressed_list, dtype=float)
 
     # compute drawdown
     hwm = np.maximum.accumulate(stressed)

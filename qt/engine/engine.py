@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from ..engine.event import MarketEvent
+from ..engine.event import MarketEvent, FillEvent
 from .order_book import OrderBook
 from .execution import ExecutionModel
 from ..risk.accounting import Account
@@ -138,7 +138,7 @@ class SimulationEngine:
             # Ensure order book exists for the symbol
             if o.symbol not in self.order_books:
                 self.order_books[o.symbol] = OrderBook()
-            fill = self.execution.simulate_fill(o, order_book=self.order_books.get(o.symbol))
+            fill: Optional[FillEvent] = self.execution.simulate_fill(o, order_book=self.order_books.get(o.symbol))
             if fill:
                 # update account and inform strategies
                 try:
