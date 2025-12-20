@@ -135,6 +135,9 @@ class SimulationEngine:
 
         # process orders (limit orders will be added to the book; market orders may fill immediately)
         for o in orders:
+            # Ensure order book exists for the symbol
+            if o.symbol not in self.order_books:
+                self.order_books[o.symbol] = OrderBook()
             fill = self.execution.simulate_fill(o, order_book=self.order_books.get(o.symbol))
             if fill:
                 # update account and inform strategies

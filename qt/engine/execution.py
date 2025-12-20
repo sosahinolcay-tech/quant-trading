@@ -1,5 +1,5 @@
 from .event import OrderEvent, FillEvent
-from typing import Literal, Optional
+from typing import Literal, Optional, Any
 
 
 class ExecutionModel:

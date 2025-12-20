@@ -34,12 +34,19 @@ def sweep_and_save(strategy="simple", param_combos=None, out_csv="sweep_results.
         else:
             param_combos = itertools.product([0.5, 1.0, 1.5], [0.0, 0.1, 0.2], [0.0000, 0.0005, 0.001], [0.0, 0.0001, 0.0005])
             param_names = ["base_spread", "inventory_coeff", "execution_fee", "slippage_coeff"]
-    rows = param_names + ["strategy", "final_equity", "sharpe", "max_drawdown", "turnover", "equity_path", "trades_path"]
+    else:
+        # If param_combos is provided, we need param_names too
+        # Default to simple market maker param names if not provided
+        if strategy == "pairs":
+            param_names = ["window", "entry_z", "exit_z", "quantity", "execution_fee", "slippage_coeff"]
+        else:
+            param_names = ["base_spread", "inventory_coeff", "execution_fee", "slippage_coeff"]
+    
+    rows = [param_names + ["strategy", "final_equity", "sharpe", "max_drawdown", "turnover", "equity_path", "trades_path"]]
     out_dir = Path("notebooks")
     out_dir.mkdir(parents=True, exist_ok=True)
     for combo in param_combos:
         params = dict(zip(param_names, combo))
-        params['strategy'] = strategy
         history, eng = run_demo_with_params(strategy, **params)
         turnover = None
         trades_path = ""
