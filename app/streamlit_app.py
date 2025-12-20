@@ -5,6 +5,7 @@ import subprocess
 import sys
 import os
 import csv
+from qt.analytics.risk import stress_test_equity, monte_carlo_horizon_var, compute_var, compute_cvar
 
 st.set_page_config(page_title="Quant Trading Dashboard", layout="wide")
 st.title('📈 Quant Trading Framework Dashboard')
@@ -94,6 +95,20 @@ with col1:
                 if equity_data:
                     fig = plot_equity_curve(equity_data, 'Market Maker Equity Curve')
                     st.pyplot(fig)
+                    # Risk metrics
+                    values = [v for (_t, v) in equity_data]
+                    if len(values) > 1:
+                        rets = [values[i+1] / values[i] - 1.0 for i in range(len(values)-1)]
+                        var_95 = compute_var(rets, alpha=0.05, method='historical')
+                        cvar_95 = compute_cvar(rets, alpha=0.05, method='historical')
+                        mc_var_5d = monte_carlo_horizon_var(rets, alpha=0.05, horizon=5, simulations=2000)
+                        st.metric('VaR (95%)', f"{var_95:.4f}")
+                        st.metric('CVaR (95%)', f"{cvar_95:.4f}")
+                        st.metric('MC VaR 5d (95%)', f"{mc_var_5d:.4f}")
+                        if st.button('Apply -30% Shock', key='mm_shock'):
+                            stressed = stress_test_equity(values, shock_pct=-0.3)
+                            fig2 = plot_equity_curve(list(enumerate(stressed['stressed_equity'])), 'Stressed Equity')
+                            st.pyplot(fig2)
             else:
                 st.error('Demo failed')
                 st.text(result.stderr)
@@ -131,6 +146,20 @@ with col2:
                 if equity_data:
                     fig = plot_equity_curve(equity_data, 'Pairs Trading Equity Curve')
                     st.pyplot(fig)
+                    # Risk metrics
+                    values = [v for (_t, v) in equity_data]
+                    if len(values) > 1:
+                        rets = [values[i+1] / values[i] - 1.0 for i in range(len(values)-1)]
+                        var_95 = compute_var(rets, alpha=0.05, method='historical')
+                        cvar_95 = compute_cvar(rets, alpha=0.05, method='historical')
+                        mc_var_5d = monte_carlo_horizon_var(rets, alpha=0.05, horizon=5, simulations=2000)
+                        st.metric('VaR (95%)', f"{var_95:.4f}")
+                        st.metric('CVaR (95%)', f"{cvar_95:.4f}")
+                        st.metric('MC VaR 5d (95%)', f"{mc_var_5d:.4f}")
+                        if st.button('Apply -30% Shock', key='pairs_shock'):
+                            stressed = stress_test_equity(values, shock_pct=-0.3)
+                            fig2 = plot_equity_curve(list(enumerate(stressed['stressed_equity'])), 'Stressed Equity')
+                            st.pyplot(fig2)
             else:
                 st.error('Demo failed')
                 st.text(result.stderr)
@@ -154,4 +183,4 @@ if st.button('Run Walk-Forward Analysis'):
 
 # Footer
 st.markdown('---')
-st.markdown('Built with ❤️ using Streamlit | [GitHub](https://github.com/sosahinolcay-tech/quant-trading)')
+st.markdown('Built using Streamlit | [GitHub](https://github.com/sosahinolcay-tech/quant-trading)')
