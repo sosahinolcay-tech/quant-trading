@@ -49,16 +49,24 @@ class OrderBook:
         """Calculate mid price from best bid/ask levels.
         
         Uses optimized numba function if available for better performance.
+        Falls back to simple list operations if numba fails.
         """
         if self.bid_levels and self.ask_levels:
-            # Convert to list for numba compatibility
-            import numpy as np
-            bid_array = np.array(self.bid_levels, dtype=np.float64)
-            ask_array = np.array(self.ask_levels, dtype=np.float64)
-            b = find_best_price_level(bid_array, True)
-            a = find_best_price_level(ask_array, False)
-            if b > 0 and a > 0:
-                return (b + a) / 2.0
+            try:
+                # Try numba-accelerated version
+                import numpy as np
+                bid_array = np.array(self.bid_levels, dtype=np.float64)
+                ask_array = np.array(self.ask_levels, dtype=np.float64)
+                b = find_best_price_level(bid_array, True)
+                a = find_best_price_level(ask_array, False)
+                if b > 0 and a > 0:
+                    return (b + a) / 2.0
+            except Exception:
+                # Fallback to simple Python operations
+                b = max(self.bid_levels) if self.bid_levels else 0.0
+                a = min(self.ask_levels) if self.ask_levels else 0.0
+                if b > 0 and a > 0:
+                    return (b + a) / 2.0
         return self.last_price if self.last_price > 0 else 0.0
 
     def _insert_level(self, levels: List[float], price: float, reverse: bool = False):
@@ -123,15 +131,20 @@ class OrderBook:
         """Calculate total liquidity at a specific price level.
         
         Uses optimized numba function for better performance.
+        Falls back to simple sum if numba fails.
         """
         lvl = self.bids if side == 'BUY' else self.asks
         orders = lvl.get(price, [])
         if not orders:
             return 0.0
-        # Extract quantities and use numba-accelerated sum
-        import numpy as np
-        quantities = np.array([o['quantity'] for o in orders], dtype=np.float64)
-        return compute_liquidity_sum(quantities)
+        try:
+            # Try numba-accelerated version
+            import numpy as np
+            quantities = np.array([o['quantity'] for o in orders], dtype=np.float64)
+            return compute_liquidity_sum(quantities)
+        except Exception:
+            # Fallback to simple Python sum
+            return sum(o['quantity'] for o in orders)
 
     def process_trade(self, price: float, size: float):
         """Process an incoming market trade at `price` for total `size`.
