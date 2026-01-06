@@ -5,7 +5,7 @@
 [![PyPI version](https://badge.fury.io/py/quant-trading.svg)](https://pypi.org/project/quant-trading/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive event-driven quantitative trading simulator built in Python. This framework includes multiple trading strategies, backtesting engine, risk management, analytics, and performance evaluation tools.
+A comprehensive event-driven quantitative trading simulator built in Python. The framework includes multiple trading strategies, a backtesting engine, risk management, analytics, and performance evaluation tools.
 
 ## Features
 

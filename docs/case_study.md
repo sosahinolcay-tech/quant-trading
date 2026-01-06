@@ -4,7 +4,7 @@ This document summarizes the strategies, methodology, results, and limitations.
 
 ## Motivation
 
-This project implements a lightweight backtesting framework for quantitative trading strategies, focusing on market making and pairs trading. The goal is to demonstrate strategy implementation, risk management, and performance evaluation in a simulated environment.
+A lightweight backtesting framework for quantitative trading strategies was developed, focusing on market making and pairs trading. The goal is to demonstrate strategy implementation, risk management, and performance evaluation in a simulated environment.
 
 ## Data and Assumptions
 

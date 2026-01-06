@@ -1,6 +1,6 @@
 # Repository secrets and where to add them
 
-This project can use a few repository secrets for CI, publishing, and integrations. Add these via GitHub → Settings → Secrets and variables → Actions.
+This project uses a few repository secrets for CI, publishing, and integrations. Add these via GitHub → Settings → Secrets and variables → Actions.
 
 Recommended secrets
 
