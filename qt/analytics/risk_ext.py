@@ -1,14 +1,16 @@
 """Extended risk utilities for Week 5: multi-asset MC, bootstrap, scenario replay,
 and a lightweight GARCH-like simulator.
 """
+
 from typing import Any, Dict, Sequence
 
 import numpy as np
 from typing import List
 
 
-def multi_asset_monte_carlo_var(returns_matrix, weights, portfolio_value: float = 1.0,
-                                alpha: float = 0.05, horizon: int = 1, simulations: int = 10000) -> float:
+def multi_asset_monte_carlo_var(
+    returns_matrix, weights, portfolio_value: float = 1.0, alpha: float = 0.05, horizon: int = 1, simulations: int = 10000
+) -> float:
     """Multi-asset Monte Carlo VaR for a portfolio defined by asset weights.
 
     Parameters
@@ -34,7 +36,7 @@ def multi_asset_monte_carlo_var(returns_matrix, weights, portfolio_value: float 
 
     mu = np.mean(rets, axis=0)
     cov = np.cov(rets, rowvar=False)
-    
+
     # Validate covariance matrix is positive semi-definite
     if not np.all(np.linalg.eigvals(cov) >= -1e-10):
         # If not PSD, make it PSD by adding small regularization
@@ -68,9 +70,12 @@ def bootstrap_var(returns, alpha: float = 0.05, horizon: int = 1, simulations: i
     return float(var)
 
 
-def apply_historical_scenario_to_portfolio(weights: Sequence[float], initial_portfolio_value: float,
-                                          returns_matrix: Sequence[Sequence[float]],
-                                          scenario_returns: Sequence[Sequence[float]]) -> Dict[str, Any]:
+def apply_historical_scenario_to_portfolio(
+    weights: Sequence[float],
+    initial_portfolio_value: float,
+    returns_matrix: Sequence[Sequence[float]],
+    scenario_returns: Sequence[Sequence[float]],
+) -> Dict[str, Any]:
     """Apply a multi-period historical scenario (sequence of returns) to a weighted portfolio.
 
     - `weights`: portfolio weights per asset (length N)
@@ -86,7 +91,7 @@ def apply_historical_scenario_to_portfolio(weights: Sequence[float], initial_por
     horizon, N = scen.shape
     w = np.asarray(weights, dtype=float)
     if w.shape[0] != N:
-        raise ValueError('weights length must match scenario asset dimension')
+        raise ValueError("weights length must match scenario asset dimension")
 
     equity_list: List[float] = [float(initial_portfolio_value)]
     for t in range(horizon):
@@ -100,8 +105,9 @@ def apply_historical_scenario_to_portfolio(weights: Sequence[float], initial_por
     return {"stressed_equity": equity.tolist(), "max_drawdown": max_dd, "final_equity": float(equity[-1])}
 
 
-def simulate_garch_returns(returns, horizon: int = 1, simulations: int = 10000,
-                           omega: float = 1e-6, alpha_g: float = 0.05, beta: float = 0.9) -> np.ndarray:
+def simulate_garch_returns(
+    returns, horizon: int = 1, simulations: int = 10000, omega: float = 1e-6, alpha_g: float = 0.05, beta: float = 0.9
+) -> np.ndarray:
     """Simulate horizon returns using a simple GARCH(1,1)-like recursion for variance.
 
     This is a lightweight, approximate simulator that uses user-provided GARCH
@@ -126,10 +132,16 @@ def simulate_garch_returns(returns, horizon: int = 1, simulations: int = 10000,
     return cumrets
 
 
-def garch_var(returns, alpha: float = 0.05, horizon: int = 1, simulations: int = 10000,
-              omega: float = 1e-6, alpha_g: float = 0.05, beta: float = 0.9) -> float:
+def garch_var(
+    returns,
+    alpha: float = 0.05,
+    horizon: int = 1,
+    simulations: int = 10000,
+    omega: float = 1e-6,
+    alpha_g: float = 0.05,
+    beta: float = 0.9,
+) -> float:
     """Estimate VaR using the GARCH-like simulator above."""
-    sims = simulate_garch_returns(returns, horizon=horizon, simulations=simulations,
-                                  omega=omega, alpha_g=alpha_g, beta=beta)
+    sims = simulate_garch_returns(returns, horizon=horizon, simulations=simulations, omega=omega, alpha_g=alpha_g, beta=beta)
     var = -np.quantile(sims, alpha)
     return float(var)

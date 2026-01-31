@@ -1,4 +1,5 @@
 """Command-line interface for quant-trading framework"""
+
 import click
 from qt.engine.engine import SimulationEngine
 from qt.strategies.market_maker import AvellanedaMarketMaker
@@ -31,7 +32,7 @@ def demo(strategy, symbol, symbol_x, symbol_y):
     engine.run_demo()
 
     # Show summary
-    if hasattr(engine, 'trade_log') and engine.trade_log:
+    if hasattr(engine, "trade_log") and engine.trade_log:
         click.echo(f"Trades: {len(engine.trade_log)}")
         click.echo(f"Turnover: {engine.turnover:.2f}")
 

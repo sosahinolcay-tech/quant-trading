@@ -1,4 +1,5 @@
 """Data sources for market data with validation and caching."""
+
 from __future__ import annotations
 
 from typing import Optional
@@ -51,6 +52,7 @@ class YahooFinanceDataSource(DataSource):
                     return prepared
         try:
             import yfinance as yf
+
             df = None
             ticker = yf.Ticker(symbol)
             df = ticker.history(start=start_date, end=end_date, interval=interval)

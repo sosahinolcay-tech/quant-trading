@@ -24,8 +24,8 @@ def test_apply_scenario_portfolio():
     # simple two-step scenario where first asset drops 10% then recovers
     scenario = [[-0.1, 0.0], [0.05, -0.02]]
     out = risk_ext.apply_historical_scenario_to_portfolio(weights, init, None, scenario)
-    assert 'stressed_equity' in out
-    assert out['final_equity'] > 0
+    assert "stressed_equity" in out
+    assert out["final_equity"] > 0
 
 
 def test_garch_sim_and_var():

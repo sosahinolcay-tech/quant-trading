@@ -28,7 +28,7 @@ def main():
         quantity=quantity,
     )
     eng.register_strategy(pairs)
-    print('Running pairs demo simulation (this may take a few seconds)...')
+    print("Running pairs demo simulation (this may take a few seconds)...")
     data_source = os.getenv("DATA_SOURCE", "yahoo")
     start_date = os.getenv("START_DATE", "2022-01-01")
     end_date = os.getenv("END_DATE", "2024-01-01")
@@ -44,21 +44,22 @@ def main():
     if not eq:
         eq = [(0.0, 100000.0), (1.0, 100000.0)]  # flat if no trades
 
-    summary = full_report(eq, trade_log=eng.trade_log, out_csv_path='notebooks/summary_metrics_pairs_demo.csv')
-    print('Pairs demo summary:', summary)
-    print('Trade count:', len(eng.trade_log))
-    print('Turnover:', eng.turnover)
+    summary = full_report(eq, trade_log=eng.trade_log, out_csv_path="notebooks/summary_metrics_pairs_demo.csv")
+    print("Pairs demo summary:", summary)
+    print("Trade count:", len(eng.trade_log))
+    print("Turnover:", eng.turnover)
 
     # Save equity curve for plotting
     if eq:
         import csv
-        with open('notebooks/equity_pairs_demo.csv', 'w', newline='') as f:
+
+        with open("notebooks/equity_pairs_demo.csv", "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(['timestamp', 'equity'])
+            writer.writerow(["timestamp", "equity"])
             for ts, val in eq:
                 writer.writerow([ts, val])
-        print('Equity curve saved to notebooks/equity_pairs_demo.csv')
+        print("Equity curve saved to notebooks/equity_pairs_demo.csv")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

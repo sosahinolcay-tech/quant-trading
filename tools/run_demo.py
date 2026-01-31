@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 # ensure project root is on sys.path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -14,6 +15,7 @@ from qt.analytics.reports import full_report
 def main():
     # Run a simple parameter sweep with limited combinations for demo
     from itertools import product
+
     param_combos = list(product([0.5, 1.0], [0.0, 0.1]))
     sweep_and_save("simple", param_combos=param_combos, out_csv="notebooks/sweep_results.csv")
     print("Wrote notebooks/sweep_results.csv")
@@ -39,11 +41,12 @@ def main():
     if not eq_hist:
         # fallback to initial cash if nothing recorded
         eq_hist = [(0.0, eng.account.cash), (1.0, eng.account.cash)]
-    summary = full_report(eq_hist, trade_log=eng.trade_log, out_csv_path='notebooks/summary_metrics_demo.csv')
+    summary = full_report(eq_hist, trade_log=eng.trade_log, out_csv_path="notebooks/summary_metrics_demo.csv")
     print("Wrote notebooks/summary_metrics_demo.csv ->", summary)
 
     if eq_hist:
         import csv
+
         with open("notebooks/equity_demo.csv", "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["timestamp", "equity"])
@@ -52,5 +55,5 @@ def main():
         print("Equity curve saved to notebooks/equity_demo.csv")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

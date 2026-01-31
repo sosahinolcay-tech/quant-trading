@@ -108,29 +108,93 @@ class PairsStrategy(StrategyBase):
                 # short spread: short y, long x
                 self.position = -1
                 orders = [
-                    OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol_x, side="BUY", price=px, quantity=qty_x, order_type="MARKET"),
-                    OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol_y, side="SELL", price=py, quantity=qty_y, order_type="MARKET"),
+                    OrderEvent(
+                        order_id=self._next_order_id(),
+                        timestamp=t,
+                        symbol=self.symbol_x,
+                        side="BUY",
+                        price=px,
+                        quantity=qty_x,
+                        order_type="MARKET",
+                    ),
+                    OrderEvent(
+                        order_id=self._next_order_id(),
+                        timestamp=t,
+                        symbol=self.symbol_y,
+                        side="SELL",
+                        price=py,
+                        quantity=qty_y,
+                        order_type="MARKET",
+                    ),
                 ]
             elif self.position == 0 and z < -self.entry_z:
                 # long spread: long y, short x
                 self.position = 1
                 orders = [
-                    OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol_x, side="SELL", price=px, quantity=qty_x, order_type="MARKET"),
-                    OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol_y, side="BUY", price=py, quantity=qty_y, order_type="MARKET"),
+                    OrderEvent(
+                        order_id=self._next_order_id(),
+                        timestamp=t,
+                        symbol=self.symbol_x,
+                        side="SELL",
+                        price=px,
+                        quantity=qty_x,
+                        order_type="MARKET",
+                    ),
+                    OrderEvent(
+                        order_id=self._next_order_id(),
+                        timestamp=t,
+                        symbol=self.symbol_y,
+                        side="BUY",
+                        price=py,
+                        quantity=qty_y,
+                        order_type="MARKET",
+                    ),
                 ]
             elif self.position != 0 and abs(z) < self.exit_z:
                 # close position
                 if self.position == -1:
                     # was short spread, now buy y, sell x
                     orders = [
-                        OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol_x, side="SELL", price=px, quantity=abs(self.inventory_x), order_type="MARKET"),
-                        OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol_y, side="BUY", price=py, quantity=abs(self.inventory_y), order_type="MARKET"),
+                        OrderEvent(
+                            order_id=self._next_order_id(),
+                            timestamp=t,
+                            symbol=self.symbol_x,
+                            side="SELL",
+                            price=px,
+                            quantity=abs(self.inventory_x),
+                            order_type="MARKET",
+                        ),
+                        OrderEvent(
+                            order_id=self._next_order_id(),
+                            timestamp=t,
+                            symbol=self.symbol_y,
+                            side="BUY",
+                            price=py,
+                            quantity=abs(self.inventory_y),
+                            order_type="MARKET",
+                        ),
                     ]
                 elif self.position == 1:
                     # was long spread, now sell y, buy x
                     orders = [
-                        OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol_x, side="BUY", price=px, quantity=abs(self.inventory_x), order_type="MARKET"),
-                        OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol_y, side="SELL", price=py, quantity=abs(self.inventory_y), order_type="MARKET"),
+                        OrderEvent(
+                            order_id=self._next_order_id(),
+                            timestamp=t,
+                            symbol=self.symbol_x,
+                            side="BUY",
+                            price=px,
+                            quantity=abs(self.inventory_x),
+                            order_type="MARKET",
+                        ),
+                        OrderEvent(
+                            order_id=self._next_order_id(),
+                            timestamp=t,
+                            symbol=self.symbol_y,
+                            side="SELL",
+                            price=py,
+                            quantity=abs(self.inventory_y),
+                            order_type="MARKET",
+                        ),
                     ]
                 self.position = 0
             return orders
@@ -147,5 +211,3 @@ class PairsStrategy(StrategyBase):
                 self.inventory_y += fill.quantity
             else:
                 self.inventory_y -= fill.quantity
-
-

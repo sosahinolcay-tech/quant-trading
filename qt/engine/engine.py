@@ -94,10 +94,10 @@ class SimulationEngine:
             for fdict in fills_from_book:
                 # create a FillEvent applying slippage/fee using the ExecutionModel
                 fill_from_book: FillEvent = self.execution.fill_from_book(
-                    order_id=fdict.get('order_id'),
-                    side=fdict.get('side'),
-                    price=fdict.get('price'),
-                    quantity=fdict.get('quantity'),
+                    order_id=fdict.get("order_id"),
+                    side=fdict.get("side"),
+                    price=fdict.get("price"),
+                    quantity=fdict.get("quantity"),
                     timestamp=ev.timestamp,
                     order_book=self.order_books[ev.symbol],
                 )
@@ -112,9 +112,21 @@ class SimulationEngine:
                     try:
                         s.on_order_filled(fill_from_book)
                     except Exception as e:
-                        logger.warning(f"Strategy {type(s).__name__} failed to process fill {fill_from_book.order_id}: {e}", exc_info=True)
+                        logger.warning(
+                            f"Strategy {type(s).__name__} failed to process fill {fill_from_book.order_id}: {e}", exc_info=True
+                        )
                 # record trade log and turnover
-                self.trade_log.append({'timestamp': fill_from_book.timestamp, 'order_id': fill_from_book.order_id, 'symbol': fill_from_book.symbol, 'side': fill_from_book.side, 'price': fill_from_book.price, 'quantity': fill_from_book.quantity, 'fee': fill_from_book.fee})
+                self.trade_log.append(
+                    {
+                        "timestamp": fill_from_book.timestamp,
+                        "order_id": fill_from_book.order_id,
+                        "symbol": fill_from_book.symbol,
+                        "side": fill_from_book.side,
+                        "price": fill_from_book.price,
+                        "quantity": fill_from_book.quantity,
+                        "fee": fill_from_book.fee,
+                    }
+                )
                 self.turnover += abs(fill_from_book.price * fill_from_book.quantity)
 
         # give event to strategies
@@ -138,9 +150,21 @@ class SimulationEngine:
                     try:
                         s.on_order_filled(fill_order)
                     except Exception as e:
-                        logger.warning(f"Strategy {type(s).__name__} failed to process fill {fill_order.order_id}: {e}", exc_info=True)
+                        logger.warning(
+                            f"Strategy {type(s).__name__} failed to process fill {fill_order.order_id}: {e}", exc_info=True
+                        )
                 # record trade log and turnover
-                self.trade_log.append({'timestamp': fill_order.timestamp, 'order_id': fill_order.order_id, 'symbol': fill_order.symbol, 'side': fill_order.side, 'price': fill_order.price, 'quantity': fill_order.quantity, 'fee': fill_order.fee})
+                self.trade_log.append(
+                    {
+                        "timestamp": fill_order.timestamp,
+                        "order_id": fill_order.order_id,
+                        "symbol": fill_order.symbol,
+                        "side": fill_order.side,
+                        "price": fill_order.price,
+                        "quantity": fill_order.quantity,
+                        "fee": fill_order.fee,
+                    }
+                )
                 self.turnover += abs(fill_order.price * float(fill_order.quantity))
 
         # after processing orders and fills, record MTM equity using last_prices

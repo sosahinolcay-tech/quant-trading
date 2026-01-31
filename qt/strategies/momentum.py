@@ -32,7 +32,7 @@ class MomentumModelStrategy(StrategyBase):
         x_last = X[-1:].reshape(1, -1)
         if self.model is None:
             # fallback: sum of recent returns
-            return float(np.sign(x_last[0, :self.window].sum()))
+            return float(np.sign(x_last[0, : self.window].sum()))
         pred = self.model.predict(x_last)
         return float(np.sign(pred[0]))
 
@@ -51,7 +51,9 @@ class MomentumModelStrategy(StrategyBase):
 
         side: Literal["BUY", "SELL"] = "BUY" if sig > 0 else "SELL"
         t = getattr(event, "timestamp", time.time())
-        order = OrderEvent(order_id=f"mom-1", timestamp=t, symbol=self.symbol, side=side, price=price, quantity=self.size, order_type="MARKET")
+        order = OrderEvent(
+            order_id=f"mom-1", timestamp=t, symbol=self.symbol, side=side, price=price, quantity=self.size, order_type="MARKET"
+        )
         return [order]
 
     def on_order_filled(self, fill):

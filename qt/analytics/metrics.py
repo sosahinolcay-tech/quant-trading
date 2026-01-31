@@ -7,10 +7,10 @@ TRADING_DAYS_PER_YEAR = 252.0  # Standard trading days per year
 
 def compute_returns(equity_curve):
     """Compute returns from equity curve.
-    
+
     Args:
         equity_curve: Array-like of portfolio values
-    
+
     Returns:
         Array of returns (one less element than input)
     """
@@ -25,11 +25,11 @@ def compute_returns(equity_curve):
 
 def compute_sharpe(returns, annualization: float = TRADING_DAYS_PER_YEAR) -> float:
     """Compute Sharpe ratio for a returns series.
-    
+
     Args:
         returns: Array-like of returns
         annualization: Annualization factor (default: 252 trading days)
-    
+
     Returns:
         Sharpe ratio as float
     """
@@ -44,17 +44,17 @@ def compute_sharpe(returns, annualization: float = TRADING_DAYS_PER_YEAR) -> flo
 
 def compute_drawdown(equity_curve):
     """Compute drawdown series and maximum drawdown.
-    
+
     Args:
         equity_curve: Array-like of equity values
-    
+
     Returns:
         Dictionary with 'drawdown_series' and 'max_drawdown' keys
     """
     eq = np.array(equity_curve, dtype=float)
     if eq.size == 0:
         return {"drawdown_series": [], "max_drawdown": 0.0}
-    
+
     hwm = np.maximum.accumulate(eq)
     # Prevent division by zero - use epsilon for very small values
     hwm = np.maximum(hwm, EPSILON)
@@ -83,7 +83,7 @@ def rolling_sharpe(equity_curve, window: int = 20, annualization: float = TRADIN
         return np.full(eq.shape, np.nan)
     shs = np.full(n, np.nan)
     for i in range(window - 1, n):
-        w = rets[i - window + 1:i + 1]
+        w = rets[i - window + 1 : i + 1]
         shs[i] = compute_sharpe(w, annualization=annualization)
     # pad to match equity_curve length (equity length = returns+1)
     padded = np.full(eq.shape, np.nan)
@@ -97,7 +97,7 @@ def rolling_volatility(returns, window: int = 20, annualization: float = TRADING
         return np.full(rets.shape, np.nan)
     vols = np.full(rets.shape, np.nan)
     for i in range(window - 1, len(rets)):
-        w = rets[i - window + 1:i + 1]
+        w = rets[i - window + 1 : i + 1]
         vols[i] = np.std(w, ddof=1) * np.sqrt(annualization)
     return vols
 
@@ -110,8 +110,8 @@ def compute_return_stats(returns):
     std = np.std(rets, ddof=1)
     centered = rets - mean
     denom = np.maximum(std, EPSILON) ** 3
-    skew = np.mean(centered ** 3) / denom
-    kurt = np.mean(centered ** 4) / np.maximum(std, EPSILON) ** 4 - 3.0
+    skew = np.mean(centered**3) / denom
+    kurt = np.mean(centered**4) / np.maximum(std, EPSILON) ** 4 - 3.0
     return {"mean": float(mean), "std": float(std), "skew": float(skew), "kurtosis": float(kurt)}
 
 
@@ -173,6 +173,7 @@ def compute_drawdown_duration(equity_curve):
 def _safe_mpl_backend():
     try:
         import matplotlib
+
         if matplotlib.get_backend().lower() != "agg":
             matplotlib.use("Agg", force=True)
     except Exception:

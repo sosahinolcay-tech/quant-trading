@@ -92,7 +92,12 @@ def full_report(equity_history, trade_log=None, out_csv_path="summary_metrics.cs
         rets = compute_returns(equities)
         sharpe = compute_sharpe(rets)
         dd = compute_drawdown(equities)
-        rows = [("metric", "value"), ("sharpe", sharpe), ("max_drawdown", dd["max_drawdown"]), ("final_equity", equities[-1] if equities else None)]
+        rows = [
+            ("metric", "value"),
+            ("sharpe", sharpe),
+            ("max_drawdown", dd["max_drawdown"]),
+            ("final_equity", equities[-1] if equities else None),
+        ]
         with open(out_csv_path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerows(rows)
@@ -104,7 +109,12 @@ def full_report(equity_history, trade_log=None, out_csv_path="summary_metrics.cs
     rets = compute_returns(equities)
     sharpe = compute_sharpe(rets)
     dd = compute_drawdown(equities)
-    summary = {"sharpe": sharpe, "max_drawdown": dd.get("max_drawdown"), "final_equity": equities[-1] if equities else None, "n_points": len(equities)}
+    summary = {
+        "sharpe": sharpe,
+        "max_drawdown": dd.get("max_drawdown"),
+        "final_equity": equities[-1] if equities else None,
+        "n_points": len(equities),
+    }
 
     # write top-level CSV
     rows = [("metric", "value")]
@@ -124,7 +134,7 @@ def full_report(equity_history, trade_log=None, out_csv_path="summary_metrics.cs
     # optionally include trade-level aggregates if trade_log provided
     if trade_log:
         total_trades = len(trade_log)
-        turnover = sum(abs(float(t.get('price', 0)) * float(t.get('quantity', 0))) for t in trade_log)
+        turnover = sum(abs(float(t.get("price", 0)) * float(t.get("quantity", 0))) for t in trade_log)
         summary.update({"total_trades": total_trades, "turnover": turnover})
         # augment main CSV
         with open(out_csv_path, "a", newline="") as f:

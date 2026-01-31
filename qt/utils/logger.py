@@ -1,5 +1,6 @@
 def get_logger(name: str):
     import logging
+
     logger = logging.getLogger(name)
     if not logger.handlers:
         h = logging.StreamHandler()

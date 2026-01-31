@@ -1,4 +1,3 @@
-
 """Market-making strategies.
 
 This module provides a lightweight Avellaneda-like market maker suitable for
@@ -27,7 +26,9 @@ class SimpleMarketMaker(StrategyBase):
     spread with a linear inventory penalty shifting quotes.
     """
 
-    def __init__(self, symbol: str, size: float = 1.0, base_spread: float = 1.0, inventory_coeff: float = 0.1, vol_window: int = 10):
+    def __init__(
+        self, symbol: str, size: float = 1.0, base_spread: float = 1.0, inventory_coeff: float = 0.1, vol_window: int = 10
+    ):
         super().__init__(symbol)
         self.size = size
         self.base_spread = base_spread
@@ -44,8 +45,8 @@ class SimpleMarketMaker(StrategyBase):
     def _estimate_vol(self):
         if len(self.prices) < 2:
             return 0.0
-        rets = [(self.prices[i+1] / self.prices[i] - 1.0) for i in range(len(self.prices)-1)]
-        vol = (sum((r - (sum(rets)/len(rets)))**2 for r in rets) / (len(rets)-1))**0.5 if len(rets) > 1 else 0.0
+        rets = [(self.prices[i + 1] / self.prices[i] - 1.0) for i in range(len(self.prices) - 1)]
+        vol = (sum((r - (sum(rets) / len(rets))) ** 2 for r in rets) / (len(rets) - 1)) ** 0.5 if len(rets) > 1 else 0.0
         return vol * math.sqrt(TRADING_DAYS_PER_YEAR)
 
     def on_market_event(self, event):
@@ -53,7 +54,9 @@ class SimpleMarketMaker(StrategyBase):
         if getattr(event, "price", None) and event.price > 0:
             self.prices.append(event.price)
 
-        mid = self.engine.order_books.get(self.symbol, type('Dummy', (), {'mid_price': lambda _: self.engine.last_prices.get(self.symbol, 100.0)})()).mid_price()
+        mid = self.engine.order_books.get(
+            self.symbol, type("Dummy", (), {"mid_price": lambda _: self.engine.last_prices.get(self.symbol, 100.0)})()
+        ).mid_price()
         if not mid:
             return []
 
@@ -62,12 +65,28 @@ class SimpleMarketMaker(StrategyBase):
         spread = max(self.base_spread + k * vol, 1e-6)
 
         penalty = self.inventory_coeff * self.inventory
-        bid = mid - spread/2.0 - penalty
-        ask = mid + spread/2.0 - penalty
+        bid = mid - spread / 2.0 - penalty
+        ask = mid + spread / 2.0 - penalty
         t = getattr(event, "timestamp", time.time())
         orders = [
-            OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol, side="BUY", price=bid, quantity=self.size, order_type="LIMIT"),
-            OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol, side="SELL", price=ask, quantity=self.size, order_type="LIMIT"),
+            OrderEvent(
+                order_id=self._next_order_id(),
+                timestamp=t,
+                symbol=self.symbol,
+                side="BUY",
+                price=bid,
+                quantity=self.size,
+                order_type="LIMIT",
+            ),
+            OrderEvent(
+                order_id=self._next_order_id(),
+                timestamp=t,
+                symbol=self.symbol,
+                side="SELL",
+                price=ask,
+                quantity=self.size,
+                order_type="LIMIT",
+            ),
         ]
         return orders
 
@@ -92,14 +111,17 @@ class AvellanedaMarketMaker(SimpleMarketMaker):
     - min_quote_interval: minimum seconds between quote updates (adaptive)
     """
 
-    def __init__(self, symbol: str,
-                 size: float = 1.0,
-                 base_spread: float = 0.01,
-                 risk_aversion: float = 0.1,
-                 max_inventory: float = 100.0,
-                 vol_window: int = 50,
-                 ewma_alpha: float = 0.2,
-                 min_quote_interval: float = 0.1):
+    def __init__(
+        self,
+        symbol: str,
+        size: float = 1.0,
+        base_spread: float = 0.01,
+        risk_aversion: float = 0.1,
+        max_inventory: float = 100.0,
+        vol_window: int = 50,
+        ewma_alpha: float = 0.2,
+        min_quote_interval: float = 0.1,
+    ):
         super().__init__(symbol, size=size, base_spread=base_spread, inventory_coeff=risk_aversion, vol_window=vol_window)
         self.risk_aversion = risk_aversion
         self.max_inventory = max_inventory
@@ -140,7 +162,9 @@ class AvellanedaMarketMaker(SimpleMarketMaker):
             self.prices.append(price)
             self._update_ewma_vol(price)
 
-        mid = self.engine.order_books.get(self.symbol, type('Dummy', (), {'mid_price': lambda _: self.engine.last_prices.get(self.symbol, 100.0)})()).mid_price()
+        mid = self.engine.order_books.get(
+            self.symbol, type("Dummy", (), {"mid_price": lambda _: self.engine.last_prices.get(self.symbol, 100.0)})()
+        ).mid_price()
         if not mid:
             return []
 
@@ -176,8 +200,24 @@ class AvellanedaMarketMaker(SimpleMarketMaker):
         orders = []
         if qty > 0:
             orders = [
-                OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol, side="BUY", price=bid, quantity=qty, order_type="LIMIT"),
-                OrderEvent(order_id=self._next_order_id(), timestamp=t, symbol=self.symbol, side="SELL", price=ask, quantity=qty, order_type="LIMIT"),
+                OrderEvent(
+                    order_id=self._next_order_id(),
+                    timestamp=t,
+                    symbol=self.symbol,
+                    side="BUY",
+                    price=bid,
+                    quantity=qty,
+                    order_type="LIMIT",
+                ),
+                OrderEvent(
+                    order_id=self._next_order_id(),
+                    timestamp=t,
+                    symbol=self.symbol,
+                    side="SELL",
+                    price=ask,
+                    quantity=qty,
+                    order_type="LIMIT",
+                ),
             ]
 
         return orders
@@ -185,6 +225,3 @@ class AvellanedaMarketMaker(SimpleMarketMaker):
     def on_order_filled(self, fill):
         # update inventory same as base class but respect direction
         super().on_order_filled(fill)
-
-
-

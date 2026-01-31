@@ -12,6 +12,7 @@ import numpy as np
 try:
     from sklearn.base import BaseEstimator
     from sklearn.linear_model import Ridge
+
     SKLEARN_AVAILABLE = True
 except Exception:
     BaseEstimator = object
@@ -81,20 +82,20 @@ class FeatureBuilder:
         y_vals = []
         for i in range(min_lookback - 1, n - 2):
             end_idx = i + 1  # aligns with price index
-            ret_window = rets[end_idx - self.window:end_idx]
+            ret_window = rets[end_idx - self.window : end_idx]
             if ret_window.shape[0] != self.window:
                 continue
 
-            ma_slice = p[end_idx + 1 - self.ma_window:end_idx + 1]
-            vol_slice = rets[end_idx + 1 - self.vol_window:end_idx + 1]
-            boll_slice = p[end_idx + 1 - self.boll_window:end_idx + 1]
+            ma_slice = p[end_idx + 1 - self.ma_window : end_idx + 1]
+            vol_slice = rets[end_idx + 1 - self.vol_window : end_idx + 1]
+            boll_slice = p[end_idx + 1 - self.boll_window : end_idx + 1]
 
             ma = ma_slice.mean()
             vol = np.std(vol_slice, ddof=1)
             momentum = p[end_idx] / p[end_idx - self.momentum_window] - 1.0
 
-            gains = np.clip(rets[end_idx + 1 - self.rsi_window:end_idx + 1], 0, None)
-            losses = -np.clip(rets[end_idx + 1 - self.rsi_window:end_idx + 1], None, 0)
+            gains = np.clip(rets[end_idx + 1 - self.rsi_window : end_idx + 1], 0, None)
+            losses = -np.clip(rets[end_idx + 1 - self.rsi_window : end_idx + 1], None, 0)
             avg_gain = gains.mean()
             avg_loss = losses.mean()
             rs = avg_gain / max(avg_loss, 1e-12)

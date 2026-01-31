@@ -34,7 +34,7 @@ class ExecutionModel:
         liquidity = 1.0
         if order_book is not None:
             # liquidity available on the opposite side of the aggressor
-            opp_side = 'SELL' if order.side == 'BUY' else 'BUY'
+            opp_side = "SELL" if order.side == "BUY" else "BUY"
             liquidity = order_book.liquidity_at(price, opp_side)
             liquidity = liquidity if liquidity > 0 else 1.0
         sign = 1.0 if order.side == "BUY" else -1.0
@@ -58,7 +58,15 @@ class ExecutionModel:
             fee=fee_amount,
         )
 
-    def fill_from_book(self, order_id: str, side: Literal["BUY", "SELL"], price: float, quantity: float, timestamp: float, order_book: Optional[Any] = None) -> FillEvent:
+    def fill_from_book(
+        self,
+        order_id: str,
+        side: Literal["BUY", "SELL"],
+        price: float,
+        quantity: float,
+        timestamp: float,
+        order_book: Optional[Any] = None,
+    ) -> FillEvent:
         """Create a FillEvent for a resting order matched by a market trade.
 
         Uses the order_book to infer liquidity at the price and apply slippage
@@ -68,7 +76,7 @@ class ExecutionModel:
         p = float(price)
         liquidity = 1.0
         if order_book is not None:
-            opp_side = 'SELL' if side == 'BUY' else 'BUY'
+            opp_side = "SELL" if side == "BUY" else "BUY"
             liquidity = order_book.liquidity_at(p, opp_side)
             liquidity = liquidity if liquidity > 0 else 1.0
         sign = 1.0 if side == "BUY" else -1.0
@@ -82,5 +90,12 @@ class ExecutionModel:
             slippage = self.slippage_coeff * (qty / liquidity) * p
         executed_price = p + sign * slippage
         fee_amount = float(self.fee) * abs(qty * executed_price)
-        return FillEvent(order_id=order_id, timestamp=timestamp + self.latency_ms / 1000.0,
-                         symbol=None, side=side, price=executed_price, quantity=qty, fee=fee_amount)
+        return FillEvent(
+            order_id=order_id,
+            timestamp=timestamp + self.latency_ms / 1000.0,
+            symbol=None,
+            side=side,
+            price=executed_price,
+            quantity=qty,
+            fee=fee_amount,
+        )

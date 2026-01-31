@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Optional
 
 import pandas as pd
+
+
 def fetch_yahoo_chart(symbol: str, interval: str = "1d", range_str: str = "2y") -> Optional[pd.DataFrame]:
     """Fetch data from Yahoo chart endpoint as a fallback."""
     try:

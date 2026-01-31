@@ -32,12 +32,12 @@ class OrderBook:
                 continue  # Skip invalid orders
             self.bid_levels.append(p)
             # seed with a synthetic liquidity order representing displayed depth
-            self.bids[p].append({'order_id': f'snap-bid-{int(p*100)}', 'price': p, 'quantity': s, 'side': 'BUY'})
+            self.bids[p].append({"order_id": f"snap-bid-{int(p*100)}", "price": p, "quantity": s, "side": "BUY"})
         for p, s in asks:
             if p <= 0 or s <= 0:
                 continue  # Skip invalid orders
             self.ask_levels.append(p)
-            self.asks[p].append({'order_id': f'snap-ask-{int(p*100)}', 'price': p, 'quantity': s, 'side': 'SELL'})
+            self.asks[p].append({"order_id": f"snap-ask-{int(p*100)}", "price": p, "quantity": s, "side": "SELL"})
         self.bid_levels.sort(reverse=True)
         self.ask_levels.sort()
 
@@ -47,7 +47,7 @@ class OrderBook:
 
     def mid_price(self) -> float:
         """Calculate mid price from best bid/ask levels.
-        
+
         Uses optimized numba function if available for better performance.
         Falls back to simple list operations if numba fails.
         """
@@ -82,7 +82,7 @@ class OrderBook:
         - add_limit_order(side, price=..., qty=...)
 
         Returns the order_id.
-        
+
         Raises:
             ValueError: If price or quantity is invalid (<= 0).
         """
@@ -98,7 +98,14 @@ class OrderBook:
                 raise ValueError(f"Invalid quantity: {qty}. Quantity must be positive.")
             # synthesize an order id
             order_id = f"legacy-{int(price*100)}-{int(qty)}"
-            order_dict = {'order_id': order_id, 'price': price, 'quantity': qty, 'side': side, 'symbol': None, 'timestamp': 0.0}
+            order_dict = {
+                "order_id": order_id,
+                "price": price,
+                "quantity": qty,
+                "side": side,
+                "symbol": None,
+                "timestamp": 0.0,
+            }
         else:
             price = float(order.price)
             qty = float(order.quantity)
@@ -109,14 +116,14 @@ class OrderBook:
                 raise ValueError(f"Invalid quantity: {qty}. Quantity must be positive.")
             side = order.side
             order_dict = {
-                'order_id': order.order_id,
-                'price': price,
-                'quantity': qty,
-                'side': side,
-                'symbol': order.symbol,
-                'timestamp': order.timestamp,
+                "order_id": order.order_id,
+                "price": price,
+                "quantity": qty,
+                "side": side,
+                "symbol": order.symbol,
+                "timestamp": order.timestamp,
             }
-        if side == 'BUY':
+        if side == "BUY":
             # bids: descending
             self.bids[price].append(order_dict)
             self._insert_level(self.bid_levels, price, reverse=True)
@@ -124,25 +131,25 @@ class OrderBook:
             # asks: ascending
             self.asks[price].append(order_dict)
             self._insert_level(self.ask_levels, price, reverse=False)
-        return str(order_dict['order_id'])
+        return str(order_dict["order_id"])
 
     def liquidity_at(self, price: float, side: str) -> float:
         """Calculate total liquidity at a specific price level.
-        
+
         Uses optimized numba function for better performance.
         Falls back to simple sum if numba fails.
         """
-        lvl = self.bids if side == 'BUY' else self.asks
+        lvl = self.bids if side == "BUY" else self.asks
         orders_list: List[Dict[str, Any]] = list(lvl.get(price, []))
         if not orders_list:
             return 0.0
         try:
             # Try numba-accelerated version
-            quantities = np.array([o['quantity'] for o in orders_list], dtype=np.float64)
+            quantities = np.array([o["quantity"] for o in orders_list], dtype=np.float64)
             return compute_liquidity_sum(quantities)
         except Exception:
             # Fallback to simple Python sum
-            return sum(o['quantity'] for o in orders_list)
+            return sum(o["quantity"] for o in orders_list)
 
     def process_trade(self, price: float, size: float):
         """Process an incoming market trade at `price` for total `size`.
@@ -158,11 +165,13 @@ class OrderBook:
             qdeque = self.asks[price]
             while qdeque and remaining > 0:
                 o = qdeque[0]
-                take = min(o['quantity'], remaining)
-                fills.append({'order_id': o['order_id'], 'price': price, 'quantity': take, 'side': 'SELL', 'symbol': o.get('symbol')})
-                o['quantity'] -= take
+                take = min(o["quantity"], remaining)
+                fills.append(
+                    {"order_id": o["order_id"], "price": price, "quantity": take, "side": "SELL", "symbol": o.get("symbol")}
+                )
+                o["quantity"] -= take
                 remaining -= take
-                if o['quantity'] <= 0:
+                if o["quantity"] <= 0:
                     qdeque.popleft()
             if not qdeque:
                 # remove level
@@ -176,11 +185,13 @@ class OrderBook:
             qdeque = self.bids[price]
             while qdeque and remaining > 0:
                 o = qdeque[0]
-                take = min(o['quantity'], remaining)
-                fills.append({'order_id': o['order_id'], 'price': price, 'quantity': take, 'side': 'BUY', 'symbol': o.get('symbol')})
-                o['quantity'] -= take
+                take = min(o["quantity"], remaining)
+                fills.append(
+                    {"order_id": o["order_id"], "price": price, "quantity": take, "side": "BUY", "symbol": o.get("symbol")}
+                )
+                o["quantity"] -= take
                 remaining -= take
-                if o['quantity'] <= 0:
+                if o["quantity"] <= 0:
                     qdeque.popleft()
             if not qdeque:
                 try:
