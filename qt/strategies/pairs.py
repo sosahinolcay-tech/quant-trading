@@ -11,7 +11,17 @@ logger = get_logger(__name__)
 class PairsStrategy(StrategyBase):
     """Cointegration-based pairs trading strategy with rolling OLS hedge ratio."""
 
-    def __init__(self, symbol_x: str, symbol_y: str, window: int = 100, entry_z: float = 2.0, exit_z: float = 0.5, quantity: float = 100.0):
+    def __init__(
+        self,
+        symbol_x: str,
+        symbol_y: str,
+        window: int = 100,
+        entry_z: float = 2.0,
+        exit_z: float = 0.5,
+        quantity: float = 100.0,
+        min_spread_std: float = 1e-4,
+        beta_bounds: Optional[tuple] = (0.2, 5.0),
+    ):
         super().__init__(symbol_x)
         self.symbol_x = symbol_x
         self.symbol_y = symbol_y
@@ -19,6 +29,8 @@ class PairsStrategy(StrategyBase):
         self.entry_z = entry_z
         self.exit_z = exit_z
         self.quantity = quantity
+        self.min_spread_std = min_spread_std
+        self.beta_bounds = beta_bounds
         self.prices_x: Deque[float] = collections.deque(maxlen=window)
         self.prices_y: Deque[float] = collections.deque(maxlen=window)
         self.beta = 0.0
@@ -42,8 +54,9 @@ class PairsStrategy(StrategyBase):
             return
         A = np.vstack([x, np.ones(len(x))]).T
         beta, intercept = np.linalg.lstsq(A, y, rcond=None)[0]
-        self.beta = float(beta)
-        self.intercept = float(intercept)
+        if np.isfinite(beta) and np.isfinite(intercept):
+            self.beta = float(beta)
+            self.intercept = float(intercept)
 
     def _compute_spread_z(self):
         if len(self.prices_x) < 2:
@@ -53,6 +66,8 @@ class PairsStrategy(StrategyBase):
         spread = y - (self.beta * x + self.intercept)
         mean = spread.mean()
         std = spread.std(ddof=1) if len(spread) > 1 else 1.0
+        if std < self.min_spread_std:
+            return 0.0
         z = (spread[-1] - mean) / (std + 1e-9)
         return float(z)
 
@@ -78,7 +93,13 @@ class PairsStrategy(StrategyBase):
                 return []
         if len(self.prices_x) >= self.window and len(self.prices_y) >= self.window:
             self._fit_ols()
+            if self.beta_bounds is not None:
+                beta_min, beta_max = self.beta_bounds
+                if not (beta_min <= abs(self.beta) <= beta_max):
+                    return []
             z = self._compute_spread_z()
+            if not np.isfinite(z):
+                return []
             orders = []
             t = event.timestamp
             qty_x = self.quantity

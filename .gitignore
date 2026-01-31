@@ -13,10 +13,15 @@ venv/
 .ipynb_checkpoints/
 # OS files
 .DS_Store
+# AppleDouble files
+._*
 # Python dist
 dist/
 build/
 *.egg-info/
+# Local caches and vendor deps
+.cache/
+vendor/
 # Editor
 .vscode/
 .idea/

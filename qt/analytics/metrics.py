@@ -91,11 +91,100 @@ def rolling_sharpe(equity_curve, window: int = 20, annualization: float = TRADIN
     return padded
 
 
+def rolling_volatility(returns, window: int = 20, annualization: float = TRADING_DAYS_PER_YEAR):
+    rets = np.asarray(returns, dtype=float)
+    if rets.size < window:
+        return np.full(rets.shape, np.nan)
+    vols = np.full(rets.shape, np.nan)
+    for i in range(window - 1, len(rets)):
+        w = rets[i - window + 1:i + 1]
+        vols[i] = np.std(w, ddof=1) * np.sqrt(annualization)
+    return vols
+
+
+def compute_return_stats(returns):
+    rets = np.asarray(returns, dtype=float)
+    if rets.size == 0:
+        return {"mean": 0.0, "std": 0.0, "skew": 0.0, "kurtosis": 0.0}
+    mean = np.mean(rets)
+    std = np.std(rets, ddof=1)
+    centered = rets - mean
+    denom = np.maximum(std, EPSILON) ** 3
+    skew = np.mean(centered ** 3) / denom
+    kurt = np.mean(centered ** 4) / np.maximum(std, EPSILON) ** 4 - 3.0
+    return {"mean": float(mean), "std": float(std), "skew": float(skew), "kurtosis": float(kurt)}
+
+
+def compute_cagr(equity_curve, annualization: float = TRADING_DAYS_PER_YEAR) -> float:
+    eq = np.asarray(equity_curve, dtype=float)
+    if eq.size < 2:
+        return 0.0
+    total_return = eq[-1] / np.maximum(eq[0], EPSILON)
+    years = (eq.size - 1) / annualization
+    if years <= 0:
+        return 0.0
+    return float(total_return ** (1.0 / years) - 1.0)
+
+
+def compute_sortino(returns, annualization: float = TRADING_DAYS_PER_YEAR) -> float:
+    rets = np.asarray(returns, dtype=float)
+    if rets.size == 0:
+        return 0.0
+    downside = rets[rets < 0]
+    if downside.size == 0:
+        return 0.0
+    downside_std = np.std(downside, ddof=1)
+    if downside_std < EPSILON:
+        return 0.0
+    return float(np.mean(rets) / downside_std * np.sqrt(annualization))
+
+
+def compute_calmar(equity_curve, annualization: float = TRADING_DAYS_PER_YEAR) -> float:
+    cagr = compute_cagr(equity_curve, annualization=annualization)
+    dd = compute_drawdown(equity_curve)
+    max_dd = abs(dd.get("max_drawdown", 0.0))
+    if max_dd < EPSILON:
+        return 0.0
+    return float(cagr / max_dd)
+
+
+def compute_drawdown_duration(equity_curve):
+    eq = np.asarray(equity_curve, dtype=float)
+    if eq.size == 0:
+        return {"max_duration": 0, "avg_duration": 0.0}
+    hwm = np.maximum.accumulate(eq)
+    underwater = eq < hwm
+    durations = []
+    current = 0
+    for flag in underwater:
+        if flag:
+            current += 1
+        else:
+            if current > 0:
+                durations.append(current)
+            current = 0
+    if current > 0:
+        durations.append(current)
+    if not durations:
+        return {"max_duration": 0, "avg_duration": 0.0}
+    return {"max_duration": int(max(durations)), "avg_duration": float(np.mean(durations))}
+
+
+def _safe_mpl_backend():
+    try:
+        import matplotlib
+        if matplotlib.get_backend().lower() != "agg":
+            matplotlib.use("Agg", force=True)
+    except Exception:
+        return
+
+
 def plot_equity_curve(equity_curve, ax=None, title="Equity Curve", savepath=None):
     """Plot an equity curve using matplotlib. Returns the matplotlib Axes.
 
     If matplotlib is not available, raises ImportError.
     """
+    _safe_mpl_backend()
     try:
         import matplotlib.pyplot as plt
     except Exception as e:
@@ -117,6 +206,7 @@ def plot_equity_curve(equity_curve, ax=None, title="Equity Curve", savepath=None
 
 
 def plot_drawdown(equity_curve, ax=None, title="Drawdown", savepath=None):
+    _safe_mpl_backend()
     try:
         import matplotlib.pyplot as plt
     except Exception as e:
@@ -139,6 +229,7 @@ def plot_drawdown(equity_curve, ax=None, title="Drawdown", savepath=None):
 
 
 def plot_rolling_sharpe(equity_curve, window=20, ax=None, title="Rolling Sharpe", savepath=None):
+    _safe_mpl_backend()
     try:
         import matplotlib.pyplot as plt
     except Exception as e:

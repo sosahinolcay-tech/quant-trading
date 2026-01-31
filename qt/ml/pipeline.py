@@ -20,62 +20,112 @@ except Exception:
 
 
 class FeatureBuilder:
-    """Build windowed features from price series.
+    """Build windowed features from price series."""
 
-    Methods
-    - rolling_returns: percentage returns over window
-    - moving_average: simple moving average over window
-    - build: combine features into X matrix and y target (next-step return)
-    """
-
-    def __init__(self, window: int = 10):
+    def __init__(
+        self,
+        window: int = 10,
+        ma_window: int = 20,
+        vol_window: int = 20,
+        rsi_window: int = 14,
+        boll_window: int = 20,
+        macd_fast: int = 12,
+        macd_slow: int = 26,
+        macd_signal: int = 9,
+        momentum_window: int = 10,
+    ):
         if window < 1:
             raise ValueError("window must be >= 1")
         self.window = window
+        self.ma_window = ma_window
+        self.vol_window = vol_window
+        self.rsi_window = rsi_window
+        self.boll_window = boll_window
+        self.macd_fast = macd_fast
+        self.macd_slow = macd_slow
+        self.macd_signal = macd_signal
+        self.momentum_window = momentum_window
 
-    def rolling_returns(self, prices: Iterable[float]) -> np.ndarray:
-        p = np.asarray(prices, dtype=float)
-        if p.size < self.window + 1:
-            return np.empty((0, self.window))
-        rets = p[1:] / p[:-1] - 1.0
-        X = np.lib.stride_tricks.sliding_window_view(rets, self.window)
-        return X
-
-    def moving_average(self, prices: Iterable[float]) -> np.ndarray:
-        p = np.asarray(prices, dtype=float)
-        if p.size < self.window:
-            return np.empty((0,))
-        c = np.convolve(p, np.ones(self.window)/self.window, mode="valid")
-        return c
+    @staticmethod
+    def _ema(series: np.ndarray, span: int) -> np.ndarray:
+        alpha = 2.0 / (span + 1.0)
+        out = np.zeros_like(series)
+        out[0] = series[0]
+        for i in range(1, len(series)):
+            out[i] = alpha * series[i] + (1 - alpha) * out[i - 1]
+        return out
 
     def build(self, prices: Iterable[float]) -> Tuple[np.ndarray, np.ndarray]:
         p = np.asarray(prices, dtype=float)
-        if p.size < self.window + 1:
-            return np.empty((0, self.window+1)), np.empty((0,))
+        if p.size < max(self.window + 2, self.macd_slow + 2, self.boll_window + 2):
+            return np.empty((0, 0)), np.empty((0,))
 
         rets = p[1:] / p[:-1] - 1.0
-        # X1_full: rolling returns windows (length = len(rets)-window+1)
-        X1_full = np.lib.stride_tricks.sliding_window_view(rets, self.window)
-        # trim last row so that we can have a next-step return target
-        if X1_full.shape[0] < 1:
-            return np.empty((0, self.window+1)), np.empty((0,))
-        X1 = X1_full[:-1]
+        n = len(rets)
+        min_lookback = max(
+            self.window,
+            self.ma_window,
+            self.vol_window,
+            self.rsi_window,
+            self.boll_window,
+            self.macd_slow,
+            self.momentum_window,
+        )
 
-        # align moving average: pick moving averages shifted by one to align
-        ma_all = self.moving_average(p)
-        # take slice starting at index 1 to align with X1 rows
-        ma_slice = ma_all[1:1 + X1.shape[0]]
-        if ma_slice.shape[0] < X1.shape[0]:
-            # fallback: pad with last value
-            pad_len = X1.shape[0] - ma_slice.shape[0]
-            if ma_slice.size > 0:
-                ma_slice = np.concatenate([ma_slice, np.repeat(ma_slice[-1], pad_len)])
-            else:
-                ma_slice = np.zeros((X1.shape[0],))
+        ema_fast = self._ema(p, self.macd_fast)
+        ema_slow = self._ema(p, self.macd_slow)
+        macd = ema_fast - ema_slow
+        macd_signal = self._ema(macd, self.macd_signal)
 
-        X = np.hstack([X1, ma_slice.reshape(-1, 1)])
-        # target: next-step return aligned with X1
-        y = rets[self.window:self.window + X1.shape[0]]
+        X_rows = []
+        y_vals = []
+        for i in range(min_lookback - 1, n - 2):
+            end_idx = i + 1  # aligns with price index
+            ret_window = rets[end_idx - self.window:end_idx]
+            if ret_window.shape[0] != self.window:
+                continue
+
+            ma_slice = p[end_idx + 1 - self.ma_window:end_idx + 1]
+            vol_slice = rets[end_idx + 1 - self.vol_window:end_idx + 1]
+            boll_slice = p[end_idx + 1 - self.boll_window:end_idx + 1]
+
+            ma = ma_slice.mean()
+            vol = np.std(vol_slice, ddof=1)
+            momentum = p[end_idx] / p[end_idx - self.momentum_window] - 1.0
+
+            gains = np.clip(rets[end_idx + 1 - self.rsi_window:end_idx + 1], 0, None)
+            losses = -np.clip(rets[end_idx + 1 - self.rsi_window:end_idx + 1], None, 0)
+            avg_gain = gains.mean()
+            avg_loss = losses.mean()
+            rs = avg_gain / max(avg_loss, 1e-12)
+            rsi = 100.0 - 100.0 / (1.0 + rs)
+
+            boll_mean = boll_slice.mean()
+            boll_std = np.std(boll_slice, ddof=1)
+            boll_z = (p[end_idx] - boll_mean) / max(boll_std, 1e-12)
+
+            feature_row = np.hstack(
+                [
+                    ret_window,
+                    np.array(
+                        [
+                            ma,
+                            vol,
+                            momentum,
+                            rsi,
+                            macd[end_idx],
+                            macd_signal[end_idx],
+                            boll_z,
+                        ],
+                        dtype=float,
+                    ),
+                ]
+            )
+            X_rows.append(feature_row)
+            y_vals.append(rets[end_idx + 1])
+
+        X = np.asarray(X_rows, dtype=float)
+        y = np.asarray(y_vals, dtype=float)
         return X, y
 
 

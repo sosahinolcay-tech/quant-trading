@@ -29,70 +29,59 @@ class SimulationEngine:
         self.strategies.append(strat)
         strat.on_init(self)
 
-    def run_demo(self, data_source=None):
-        # multi-symbol demo for market-maker and pairs
-        if data_source is None:
-            # Use synthetic data (original behavior)
-            import numpy as np
-            np.random.seed(42)
-            n = 200
-            # build two cointegrated series
-            x = np.cumsum(np.random.normal(scale=0.1, size=n)) + 100.0
-            beta = 1.5
-            y = beta * x + 0.5 + np.random.normal(scale=0.2, size=n)
+    def run_demo(
+        self,
+        data_source: Optional[Any] = "yahoo",
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        interval: str = "1d",
+        fallback_to_synthetic: bool = True,
+    ):
+        """Run a demo simulation using a data source or synthetic fallback."""
+        from ..data import get_data_source, SyntheticDataSource
 
-            # initialize a simple top-of-book for demo symbols
-            self.order_books['X'] = OrderBook()
-            self.order_books['X'].update_from_snapshot([(99.0, 100)], [(101.0, 100)])
-            self.order_books['Y'] = OrderBook()
-            self.order_books['Y'].update_from_snapshot([(148.0, 100)], [(152.0, 100)])
+        # Determine symbols used by strategies
+        symbols = set()
+        for strat in self.strategies:
+            if hasattr(strat, "symbol"):
+                symbols.add(strat.symbol)
+            if hasattr(strat, "symbol_x") and hasattr(strat, "symbol_y"):
+                symbols.add(strat.symbol_x)
+                symbols.add(strat.symbol_y)
 
-            for i in range(n):
-                evx = MarketEvent(timestamp=float(i), type="TRADE", symbol="X", price=float(x[i]), size=1.0, side=None)
-                evy = MarketEvent(timestamp=float(i), type="TRADE", symbol="Y", price=float(y[i]), size=1.0, side=None)
-                self._process_market_event(evx)
-                self._process_market_event(evy)
-        else:
-            # Use real data from data_source
-            from ..data import get_data_source
-            ds = get_data_source(data_source) if isinstance(data_source, str) else data_source
+        start_date = start_date or "2022-01-01"
+        end_date = end_date or "2024-01-01"
 
-            # Get data for symbols used by strategies
-            symbols = set()
-            for strat in self.strategies:
-                if hasattr(strat, 'symbol'):
-                    symbols.add(strat.symbol)
-                elif hasattr(strat, 'symbol_x') and hasattr(strat, 'symbol_y'):
-                    symbols.add(strat.symbol_x)
-                    symbols.add(strat.symbol_y)
+        ds = get_data_source(data_source) if isinstance(data_source, str) else data_source
+        if ds is None:
+            ds = get_data_source("yahoo")
 
-            # Default date range
-            start_date = "2023-01-01"
-            end_date = "2024-01-01"
+        for symbol in symbols:
+            df = ds.get_prices(symbol, start_date, end_date, interval=interval)
+            if (df is None or df.empty) and fallback_to_synthetic:
+                logger.warning(f"Falling back to synthetic data for {symbol}")
+                df = SyntheticDataSource().get_prices(symbol, start_date, end_date, interval=interval)
+            if df is None or df.empty:
+                logger.warning(f"No data available for {symbol}, skipping.")
+                continue
 
-            for symbol in symbols:
-                df = ds.get_prices(symbol, start_date, end_date)
-                if df is not None and not df.empty:
-                    # Initialize order book
-                    self.order_books[symbol] = OrderBook()
-                    # Use last price for initial book
-                    last_price = df['price'].iloc[-1]
-                    spread = last_price * DEFAULT_SPREAD_PCT
-                    bid = last_price - spread/2
-                    ask = last_price + spread/2
-                    self.order_books[symbol].update_from_snapshot([(bid, 100)], [(ask, 100)])
+            self.order_books[symbol] = OrderBook()
+            last_price = df["price"].iloc[-1]
+            spread = last_price * DEFAULT_SPREAD_PCT
+            bid = last_price - spread / 2
+            ask = last_price + spread / 2
+            self.order_books[symbol].update_from_snapshot([(bid, 100)], [(ask, 100)])
 
-                    # Generate events - use itertuples for better performance
-                    for row in df.itertuples():
-                        ev = MarketEvent(
-                            timestamp=float(row.timestamp),
-                            type="TRADE",
-                            symbol=symbol,
-                            price=float(row.price),
-                            size=1.0,
-                            side=None
-                        )
-                        self._process_market_event(ev)
+            for row in df.itertuples():
+                ev = MarketEvent(
+                    timestamp=float(row.timestamp),
+                    type="TRADE",
+                    symbol=symbol,
+                    price=float(row.price),
+                    size=1.0,
+                    side=None,
+                )
+                self._process_market_event(ev)
 
     def _process_market_event(self, ev: MarketEvent):
         # record last price per symbol

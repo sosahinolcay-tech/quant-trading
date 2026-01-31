@@ -4,10 +4,20 @@ from qt.ml.pipeline import FeatureBuilder, SimpleModelWrapper
 
 def test_feature_builder_small():
     prices = np.array([100.0, 101.0, 100.5, 101.5, 102.0, 101.0, 100.0, 99.5, 100.5, 101.0, 101.5])
-    fb = FeatureBuilder(window=3)
+    fb = FeatureBuilder(
+        window=3,
+        ma_window=3,
+        vol_window=3,
+        rsi_window=3,
+        boll_window=3,
+        macd_fast=3,
+        macd_slow=5,
+        macd_signal=3,
+        momentum_window=3,
+    )
     X, y = fb.build(prices)
     assert X.shape[0] == y.shape[0]
-    assert X.shape[1] == 4  # 3 returns + 1 ma
+    assert X.shape[1] == 10  # 3 returns + 7 engineered features
 
 
 def test_simple_model_fit_predict():
