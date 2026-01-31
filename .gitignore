@@ -15,6 +15,10 @@ venv/
 .DS_Store
 # AppleDouble files
 ._*
+# Coverage and build artifacts
+.coverage
+coverage.xml
+dist/
 # Python dist
 dist/
 build/
