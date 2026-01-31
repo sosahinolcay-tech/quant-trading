@@ -23,6 +23,13 @@ def compute_returns(equity_curve):
     return returns
 
 
+def compute_hit_rate(returns) -> float:
+    rets = np.asarray(returns, dtype=float)
+    if rets.size == 0:
+        return 0.0
+    return float(np.mean(rets > 0))
+
+
 def compute_sharpe(returns, annualization: float = TRADING_DAYS_PER_YEAR) -> float:
     """Compute Sharpe ratio for a returns series.
 

@@ -1,7 +1,5 @@
 metric,value
-sharpe,-2.6378623218541093
-max_drawdown,-0.0017684640467219288
-final_equity,99823.1535953278
-n_points,400
-total_trades,104
-turnover,166775.9696727726
+sharpe,0.0
+max_drawdown,0.0
+final_equity,100000.0
+n_points,105

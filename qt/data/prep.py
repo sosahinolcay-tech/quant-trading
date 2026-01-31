@@ -79,3 +79,31 @@ def prepare_price_frame(df: pd.DataFrame, min_rows: int = 10) -> Tuple[pd.DataFr
     normalized = add_returns(normalized)
     is_valid, issues = validate_prices(normalized, min_rows=min_rows)
     return normalized, issues
+
+
+def data_quality_report(df: pd.DataFrame, expected_freq_seconds: Optional[int] = None) -> Dict[str, float]:
+    report: Dict[str, float] = {
+        "rows": float(len(df)) if df is not None else 0.0,
+        "missing_pct": 0.0,
+        "duplicate_pct": 0.0,
+        "stale_seconds": 0.0,
+        "coverage_pct": 0.0,
+    }
+    if df is None or df.empty or "timestamp" not in df.columns:
+        return report
+
+    timestamps = df["timestamp"].astype(float).values
+    if len(timestamps) < 2:
+        return report
+
+    unique_count = len(set(timestamps))
+    report["duplicate_pct"] = float(1.0 - unique_count / len(timestamps))
+
+    if expected_freq_seconds:
+        span = max(timestamps) - min(timestamps)
+        expected = max(int(span / expected_freq_seconds) + 1, 1)
+        report["coverage_pct"] = float(min(len(timestamps) / expected, 1.0))
+        report["missing_pct"] = float(max(1.0 - report["coverage_pct"], 0.0))
+
+    report["stale_seconds"] = float(max(0.0, (pd.Timestamp.utcnow().timestamp() - max(timestamps))))
+    return report

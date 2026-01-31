@@ -2,4 +2,4 @@ metric,value
 sharpe,0.0
 max_drawdown,0.0
 final_equity,100000.0
-n_points,400
+n_points,105

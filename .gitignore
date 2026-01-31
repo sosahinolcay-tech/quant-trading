@@ -19,6 +19,10 @@ venv/
 .coverage
 coverage.xml
 dist/
+api/.venv/
+frontend/node_modules/
+runs/
+reports/
 # Python dist
 dist/
 build/

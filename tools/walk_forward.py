@@ -1,9 +1,11 @@
 import numpy as np
+import os
 from qt.strategies.pairs import PairsStrategy
 from qt.engine.engine import SimulationEngine
 from qt.engine.event import MarketEvent
 from qt.analytics.metrics import compute_returns, compute_sharpe
 from qt.analytics.reports import full_report
+from qt.analytics.walk_forward import walk_forward_intraday
 import logging
 
 # Set up logging for performance monitoring
@@ -46,7 +48,12 @@ def walk_forward_analysis(n_windows=5, window_size=100, test_size=50, seed=42):
         y_test = y_base[window_size : window_size + test_size]
 
         # Run simulation on test data with fitted beta
-        eng = SimulationEngine(execution_fee=0.0005, slippage_coeff=0.0001)
+        eng = SimulationEngine(
+            execution_fee=float(os.getenv("EXEC_FEE", "0.0005")),
+            slippage_coeff=float(os.getenv("EXEC_SLIPPAGE", "0.0001")),
+            half_spread_bps=float(os.getenv("EXEC_HALF_SPREAD_BPS", "2")),
+            impact_coeff=float(os.getenv("EXEC_IMPACT", "0.0001")),
+        )
         ps = PairsStrategy("X", "Y", window=window_size, entry_z=2.0, exit_z=0.5, quantity=10.0)
         eng.register_strategy(ps)
 
@@ -95,7 +102,17 @@ def walk_forward_analysis(n_windows=5, window_size=100, test_size=50, seed=42):
 
 
 if __name__ == "__main__":
-    results = walk_forward_analysis()
-    print("Walk-forward results:")
+    mode = os.getenv("WALK_MODE", "synthetic")
+    if mode == "intraday":
+        results = walk_forward_intraday(
+            symbol_x=os.getenv("PAIRS_SYMBOL_X", "MSFT"),
+            symbol_y=os.getenv("PAIRS_SYMBOL_Y", "AAPL"),
+            interval=os.getenv("INTERVAL", "1m"),
+            range_str=os.getenv("YAHOO_RANGE", "5d"),
+        )
+        print("Walk-forward intraday results:")
+    else:
+        results = walk_forward_analysis()
+        print("Walk-forward results:")
     for r in results:
         print(r)

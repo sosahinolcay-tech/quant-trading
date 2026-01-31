@@ -54,6 +54,12 @@ pip install streamlit matplotlib
 streamlit run app/streamlit_app.py
 ```
 
+- **API + Professional Frontend**:
+```bash
+./scripts/run_api.sh
+./scripts/serve_frontend.sh
+```
+
 - **Jupyter Notebooks**: Open `notebooks/` for interactive analysis
 
 - **Performance Benchmarks**:
@@ -72,6 +78,12 @@ docker-compose up quant-trading # Run demo
 
 ```bash
 pytest
+```
+
+### Local CI Script
+
+```bash
+./scripts/ci-local.sh
 ```
 
 ## Architecture

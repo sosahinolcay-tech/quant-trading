@@ -10,6 +10,8 @@ class Account:
         self.positions: Dict[str, float] = {}
         # equity history as list of (timestamp, equity)
         self.equity_history: List[Tuple[float, float]] = []
+        # exposure history as list of (timestamp, gross, net)
+        self.exposure_history: List[Tuple[float, float, float]] = []
 
     def on_fill(self, fill):
         """Process a fill event and update account positions and cash.
@@ -56,11 +58,17 @@ class Account:
     def mark_to_market(self, timestamp: float, last_prices: Dict[str, float]) -> float:
         # compute equity = cash + sum(pos * last_price)
         equity = float(self.cash)
+        gross = 0.0
+        net = 0.0
         for sym, pos in self.positions.items():
             price = last_prices.get(sym)
             if price is not None:
-                equity += pos * float(price)
+                notional = pos * float(price)
+                equity += notional
+                gross += abs(notional)
+                net += notional
         self.equity_history.append((float(timestamp), equity))
+        self.exposure_history.append((float(timestamp), gross, net))
         return equity
 
     def get_equity_curve(self) -> List[float]:

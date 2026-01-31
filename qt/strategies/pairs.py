@@ -21,6 +21,9 @@ class PairsStrategy(StrategyBase):
         quantity: float = 100.0,
         min_spread_std: float = 1e-4,
         beta_bounds: Optional[tuple] = (0.2, 5.0),
+        min_vol: float = 0.0005,
+        trend_window: int = 30,
+        max_trend_slope: float = 0.001,
     ):
         super().__init__(symbol_x)
         self.symbol_x = symbol_x
@@ -31,6 +34,9 @@ class PairsStrategy(StrategyBase):
         self.quantity = quantity
         self.min_spread_std = min_spread_std
         self.beta_bounds = beta_bounds
+        self.min_vol = min_vol
+        self.trend_window = trend_window
+        self.max_trend_slope = max_trend_slope
         self.prices_x: Deque[float] = collections.deque(maxlen=window)
         self.prices_y: Deque[float] = collections.deque(maxlen=window)
         self.beta = 0.0
@@ -71,6 +77,23 @@ class PairsStrategy(StrategyBase):
         z = (spread[-1] - mean) / (std + 1e-9)
         return float(z)
 
+    def _regime_allows_trading(self) -> bool:
+        if len(self.prices_x) < max(self.window, self.trend_window):
+            return False
+        x = np.array([float(v) for v in self.prices_x], dtype=float)
+        y = np.array([float(v) for v in self.prices_y], dtype=float)
+        rets_x = x[1:] / np.maximum(x[:-1], 1e-9) - 1.0
+        rets_y = y[1:] / np.maximum(y[:-1], 1e-9) - 1.0
+        vol = float(0.5 * (np.std(rets_x, ddof=1) + np.std(rets_y, ddof=1)))
+        if vol < self.min_vol:
+            return False
+        trend_slice = x[-self.trend_window :]
+        if len(trend_slice) < 2:
+            return False
+        t = np.arange(len(trend_slice))
+        slope = np.polyfit(t, np.log(trend_slice + 1e-9), 1)[0]
+        return abs(float(slope)) <= self.max_trend_slope
+
     def on_market_event(self, event):
         # Use engine's last_prices per symbol
         px = self.engine.last_prices.get(self.symbol_x, None)
@@ -97,6 +120,8 @@ class PairsStrategy(StrategyBase):
                 beta_min, beta_max = self.beta_bounds
                 if not (beta_min <= abs(self.beta) <= beta_max):
                     return []
+            if not self._regime_allows_trading():
+                return []
             z = self._compute_spread_z()
             if not np.isfinite(z):
                 return []

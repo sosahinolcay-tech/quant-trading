@@ -20,12 +20,31 @@ from qt.analytics.risk import stress_test_equity, monte_carlo_horizon_var, compu
 from qt.analytics.risk_ext import multi_asset_monte_carlo_var, bootstrap_var, garch_var
 from qt.data import get_data_source
 from qt.data.prep import prepare_price_frame
+from qt.data.yahoo_api import fetch_yahoo_chart
 from qt.engine.engine import SimulationEngine
 from qt.strategies.market_maker import AvellanedaMarketMaker
 from qt.strategies.pairs import PairsStrategy
 
 st.set_page_config(page_title="Quant Trading Dashboard", layout="wide")
-st.title("Quant Trading Framework Dashboard")
+st.title("Quant Trading Dashboard")
+st.markdown(
+    "Institutional-grade research workflow for data validation, strategy execution, and risk analytics."
+)
+
+st.markdown(
+    """
+<style>
+    .block-container {padding-top: 1.5rem;}
+    div[data-testid="stMetricValue"] {font-size: 1.2rem;}
+    div[data-testid="stMetricLabel"] {font-size: 0.9rem;}
+    section[data-testid="stSidebar"] {width: 320px;}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+st.sidebar.markdown("## Workspace")
+st.sidebar.caption("Configure data sources and strategy parameters.")
 
 
 @st.cache_data(show_spinner=False)
@@ -64,10 +83,20 @@ def compute_performance_summary(equity_history):
     return summary, rets
 
 
-tabs = st.tabs(["Data Setup", "Strategy Runs", "Analytics & Risk", "Comparison", "Portfolio VaR"])
+tabs = st.tabs(
+    [
+        "Data Setup",
+        "Strategy Runs",
+        "Analytics & Risk",
+        "Comparison",
+        "Portfolio VaR",
+        "Real-Time Market",
+    ]
+)
 
 with tabs[0]:
     st.subheader("Data Setup")
+    st.caption("Validate inputs and inspect the data feed before running strategies.")
     source = st.selectbox("Primary Data Source", ["yahoo", "synthetic"])
     symbol = st.text_input("Primary Symbol", value="AAPL")
     start = st.date_input("Start Date", value=date(2022, 1, 1))
@@ -88,6 +117,7 @@ with tabs[0]:
 
 with tabs[1]:
     st.subheader("Strategy Runs")
+    st.caption("Execute strategies on the selected data and review outputs.")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("Market Maker Configuration")
@@ -134,6 +164,7 @@ with tabs[1]:
 
 with tabs[2]:
     st.subheader("Analytics & Risk")
+    st.caption("Performance, risk, and drawdown analytics for the latest run.")
     view = st.radio("Select Strategy", ["Market Maker", "Pairs Trading"], horizontal=True)
     key = "mm_equity" if view == "Market Maker" else "pairs_equity"
     equity_history = st.session_state.get(key, [])
@@ -141,6 +172,12 @@ with tabs[2]:
         st.info("Run a strategy to view analytics.")
     else:
         summary, rets = compute_performance_summary(equity_history)
+        kpi_cols = st.columns(5)
+        kpi_cols[0].metric("Sharpe", f"{summary['sharpe']:.3f}")
+        kpi_cols[1].metric("Sortino", f"{summary['sortino']:.3f}")
+        kpi_cols[2].metric("CAGR", f"{summary['cagr']:.3%}")
+        kpi_cols[3].metric("Max Drawdown", f"{summary['max_drawdown']:.3%}")
+        kpi_cols[4].metric("Calmar", f"{summary['calmar']:.3f}")
         st.dataframe(pd.DataFrame([summary]), use_container_width=True)
 
         df_eq = equity_to_df(equity_history)
@@ -169,6 +206,7 @@ with tabs[2]:
 
 with tabs[3]:
     st.subheader("Comparison")
+    st.caption("Side-by-side equity comparison for the latest runs.")
     mm_eq = st.session_state.get("mm_equity", [])
     pairs_eq = st.session_state.get("pairs_equity", [])
     if not mm_eq or not pairs_eq:
@@ -181,6 +219,7 @@ with tabs[3]:
 
 with tabs[4]:
     st.subheader("Portfolio VaR")
+    st.caption("Portfolio risk estimation using multiple methodologies.")
     st.markdown("Calculate portfolio Value-at-Risk using Multi-Asset Monte Carlo, Bootstrap, or GARCH.")
 
     var_method = st.selectbox("VaR Method", ["Multi-Asset Monte Carlo", "Bootstrap", "GARCH"])
@@ -352,3 +391,36 @@ with tabs[4]:
                 st.success(f"GARCH VaR (95%): ${var_result:,.2f}")
         else:
             st.warning("Provide single-asset returns data for GARCH VaR.")
+
+with tabs[5]:
+    st.subheader("Real-Time Market View")
+    st.markdown(
+        "Yahoo intraday data is delayed and limited to short ranges. "
+        "Use 1m for up to 7 days and 5m/15m for longer windows."
+    )
+
+    rt_symbol = st.text_input("Symbol", value="AAPL", key="rt_symbol")
+    rt_interval = st.selectbox("Interval", ["1m", "5m", "15m", "1h"], key="rt_interval")
+    rt_range = st.selectbox("Range", ["1d", "5d", "1mo", "3mo"], key="rt_range")
+    refresh = st.button("Refresh Now", key="rt_refresh")
+
+    @st.cache_data(ttl=60, show_spinner=False)
+    def _fetch_realtime(symbol: str, interval: str, range_str: str):
+        df = fetch_yahoo_chart(symbol, interval=interval, range_str=range_str)
+        if df is None or df.empty:
+            return None
+        prepared, _ = prepare_price_frame(df, min_rows=2)
+        return prepared
+
+    if refresh:
+        st.cache_data.clear()
+
+    rt_df = _fetch_realtime(rt_symbol, rt_interval, rt_range)
+    if rt_df is None or rt_df.empty:
+        st.error("No real-time data returned. Check symbol or try a shorter range.")
+    else:
+        rt_df["timestamp"] = pd.to_datetime(rt_df["timestamp"], unit="s", errors="coerce")
+        st.line_chart(rt_df.set_index("timestamp")["price"], height=300)
+        latest = rt_df.iloc[-1]
+        st.metric("Last Price", f"{latest['price']:.2f}")
+        st.caption(f"Last update: {latest['timestamp']}")

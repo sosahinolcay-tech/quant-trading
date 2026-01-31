@@ -12,10 +12,21 @@ DEFAULT_SPREAD_PCT = 0.01  # 1% default spread
 
 
 class SimulationEngine:
-    def __init__(self, execution_fee: float = 0.0, slippage_coeff: float = 0.0):
+    def __init__(
+        self,
+        execution_fee: float = 0.0,
+        slippage_coeff: float = 0.0,
+        half_spread_bps: float = 0.0,
+        impact_coeff: float = 0.0,
+    ):
         self.order_books: Dict[str, OrderBook] = {}  # symbol -> OrderBook
         # configure execution model and account fees
-        self.execution = ExecutionModel(fee=execution_fee, slippage_coeff=slippage_coeff)
+        self.execution = ExecutionModel(
+            fee=execution_fee,
+            slippage_coeff=slippage_coeff,
+            half_spread_bps=half_spread_bps,
+            impact_coeff=impact_coeff,
+        )
         self.strategies: List[Any] = []
         self.time = 0.0
         self.last_prices: Dict[str, float] = {}

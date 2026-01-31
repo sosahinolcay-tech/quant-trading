@@ -204,6 +204,7 @@ jobs:
           context: .
           push: false
           tags: quant-trading:test
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
       

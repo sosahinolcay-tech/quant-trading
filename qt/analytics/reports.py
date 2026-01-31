@@ -1,7 +1,7 @@
 import csv
 from collections import defaultdict
 from datetime import datetime
-from .metrics import compute_returns, compute_sharpe, compute_drawdown
+from .metrics import compute_returns, compute_sharpe, compute_drawdown, compute_hit_rate
 
 
 def _to_daily_buckets(equity_history):
@@ -79,7 +79,12 @@ def weekly_summary(equity_history, out_csv_path=None):
     return result
 
 
-def full_report(equity_history, trade_log=None, out_csv_path="summary_metrics.csv"):
+def full_report(
+    equity_history,
+    trade_log=None,
+    exposure_history=None,
+    out_csv_path="summary_metrics.csv",
+):
     """Generate a full report: overall metrics plus optional daily/weekly CSVs.
 
     equity_history: list of (timestamp, equity) or a plain list of equity values.
@@ -91,30 +96,47 @@ def full_report(equity_history, trade_log=None, out_csv_path="summary_metrics.cs
         equities = equity_history
         rets = compute_returns(equities)
         sharpe = compute_sharpe(rets)
+        hit_rate = compute_hit_rate(rets)
         dd = compute_drawdown(equities)
         rows = [
             ("metric", "value"),
             ("sharpe", sharpe),
+            ("hit_rate", hit_rate),
             ("max_drawdown", dd["max_drawdown"]),
             ("final_equity", equities[-1] if equities else None),
         ]
         with open(out_csv_path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerows(rows)
-        return {"sharpe": sharpe, "max_drawdown": dd["max_drawdown"]}
+        return {"sharpe": sharpe, "hit_rate": hit_rate, "max_drawdown": dd["max_drawdown"]}
 
     # otherwise assume list of (ts, equity)
     # overall
     equities = [eq for (_ts, eq) in equity_history]
     rets = compute_returns(equities)
     sharpe = compute_sharpe(rets)
+    hit_rate = compute_hit_rate(rets)
     dd = compute_drawdown(equities)
     summary = {
         "sharpe": sharpe,
+        "hit_rate": hit_rate,
         "max_drawdown": dd.get("max_drawdown"),
         "final_equity": equities[-1] if equities else None,
         "n_points": len(equities),
     }
+    if exposure_history:
+        gross_vals = [v[1] for v in exposure_history if len(v) >= 3]
+        net_vals = [v[2] for v in exposure_history if len(v) >= 3]
+        if equities and gross_vals and net_vals:
+            avg_gross = sum(gross_vals) / len(gross_vals)
+            avg_net = sum(net_vals) / len(net_vals)
+            avg_eq = sum(equities) / len(equities)
+            summary.update(
+                {
+                    "avg_gross_exposure": avg_gross / avg_eq if avg_eq else 0.0,
+                    "avg_net_exposure": avg_net / avg_eq if avg_eq else 0.0,
+                }
+            )
 
     # write top-level CSV
     rows = [("metric", "value")]

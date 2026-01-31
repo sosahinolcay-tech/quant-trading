@@ -12,11 +12,22 @@ class ExecutionModel:
       slippage based on order size relative to liquidity and a simple fee.
     """
 
-    def __init__(self, latency_ms: float = 0.0, fee: float = 0.0, slippage_coeff: float = 0.0):
+    def __init__(
+        self,
+        latency_ms: float = 0.0,
+        fee: float = 0.0,
+        slippage_coeff: float = 0.0,
+        half_spread_bps: float = 0.0,
+        impact_coeff: float = 0.0,
+    ):
         self.latency_ms = latency_ms
         self.fee = float(fee)
         # slippage coefficient governs impact: fraction of price * (qty / liquidity)
         self.slippage_coeff = float(slippage_coeff)
+        # fixed half-spread in basis points for marketable fills
+        self.half_spread_bps = float(half_spread_bps)
+        # additional impact coefficient applied to qty/liquidity
+        self.impact_coeff = float(impact_coeff)
 
     def simulate_fill(self, order: OrderEvent, order_book: Optional[Any] = None) -> Optional[FillEvent]:
         # If it's a limit order, add to the book and return None (resting)
@@ -38,6 +49,7 @@ class ExecutionModel:
             liquidity = order_book.liquidity_at(price, opp_side)
             liquidity = liquidity if liquidity > 0 else 1.0
         sign = 1.0 if order.side == "BUY" else -1.0
+        spread = price * (self.half_spread_bps / 10000.0)
         # Use numba-accelerated slippage calculation with fallback
         try:
             slippage = calculate_slippage_impact(qty, liquidity, price, self.slippage_coeff)
@@ -46,7 +58,8 @@ class ExecutionModel:
             if liquidity <= 0:
                 liquidity = 1.0
             slippage = self.slippage_coeff * (qty / liquidity) * price
-        executed_price = price + sign * slippage
+        impact = self.impact_coeff * (qty / max(liquidity, 1e-9)) * price
+        executed_price = price + sign * (spread + slippage + impact)
         fee_amount = float(self.fee) * abs(qty * executed_price)
         return FillEvent(
             order_id=order.order_id,
@@ -80,6 +93,7 @@ class ExecutionModel:
             liquidity = order_book.liquidity_at(p, opp_side)
             liquidity = liquidity if liquidity > 0 else 1.0
         sign = 1.0 if side == "BUY" else -1.0
+        spread = p * (self.half_spread_bps / 10000.0)
         # Use numba-accelerated slippage calculation with fallback
         try:
             slippage = calculate_slippage_impact(qty, liquidity, p, self.slippage_coeff)
@@ -88,7 +102,8 @@ class ExecutionModel:
             if liquidity <= 0:
                 liquidity = 1.0
             slippage = self.slippage_coeff * (qty / liquidity) * p
-        executed_price = p + sign * slippage
+        impact = self.impact_coeff * (qty / max(liquidity, 1e-9)) * p
+        executed_price = p + sign * (spread + slippage + impact)
         fee_amount = float(self.fee) * abs(qty * executed_price)
         return FillEvent(
             order_id=order_id,

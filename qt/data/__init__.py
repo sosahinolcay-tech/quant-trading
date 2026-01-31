@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from typing import Optional
 import os
+import time
 import pandas as pd
 import numpy as np
 from ..utils.logger import get_logger
 
 from .cache import cache_key, read_cache, write_cache
-from .prep import prepare_price_frame
+from .prep import prepare_price_frame, data_quality_report
 from .yahoo_api import fetch_yahoo_chart
 
 logger = get_logger(__name__)
@@ -54,30 +55,42 @@ class YahooFinanceDataSource(DataSource):
             import yfinance as yf
 
             df = None
-            ticker = yf.Ticker(symbol)
-            df = ticker.history(start=start_date, end=end_date, interval=interval)
+            for attempt in range(3):
+                ticker = yf.Ticker(symbol)
+                df = ticker.history(start=start_date, end=end_date, interval=interval)
+                if df is not None and not df.empty:
+                    break
+                time.sleep(0.5 * (attempt + 1))
 
             if df is None or df.empty:
-                df = yf.download(
-                    symbol,
-                    start=start_date,
-                    end=end_date,
-                    interval=interval,
-                    progress=False,
-                    auto_adjust=True,
-                    threads=False,
-                )
+                for attempt in range(3):
+                    df = yf.download(
+                        symbol,
+                        start=start_date,
+                        end=end_date,
+                        interval=interval,
+                        progress=False,
+                        auto_adjust=True,
+                        threads=False,
+                    )
+                    if df is not None and not df.empty:
+                        break
+                    time.sleep(0.5 * (attempt + 1))
 
             if df is None or df.empty:
                 period = os.getenv("YAHOO_PERIOD", "2y")
-                df = yf.download(
-                    symbol,
-                    period=period,
-                    interval=interval,
-                    progress=False,
-                    auto_adjust=True,
-                    threads=False,
-                )
+                for attempt in range(3):
+                    df = yf.download(
+                        symbol,
+                        period=period,
+                        interval=interval,
+                        progress=False,
+                        auto_adjust=True,
+                        threads=False,
+                    )
+                    if df is not None and not df.empty:
+                        break
+                    time.sleep(0.5 * (attempt + 1))
 
             if df is None or df.empty:
                 range_str = os.getenv("YAHOO_RANGE", "2y")
@@ -148,3 +161,19 @@ def get_data_source(source_type: str = "yahoo") -> DataSource:
     if source_type == "yahoo":
         return YahooFinanceDataSource()
     return SyntheticDataSource()
+
+
+def get_prices_with_quality(
+    source_type: str,
+    symbol: str,
+    start_date: str,
+    end_date: str,
+    interval: str = "1d",
+    expected_freq_seconds: Optional[int] = None,
+) -> tuple[Optional[pd.DataFrame], dict]:
+    ds = get_data_source(source_type)
+    df = ds.get_prices(symbol, start_date, end_date, interval=interval)
+    if df is None or df.empty:
+        return None, {}
+    report = data_quality_report(df, expected_freq_seconds=expected_freq_seconds)
+    return df, report
