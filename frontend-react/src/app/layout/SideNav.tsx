@@ -1,4 +1,5 @@
 import { NavItem } from "@/components/ui/NavItem";
+import { useTabsStore } from "@/state/useTabsStore";
 import { useUiStore } from "@/state/useUiStore";
 
 const items = [
@@ -12,6 +13,8 @@ const items = [
 
 export function SideNav() {
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
+  const { activeTabId, setActiveTabByView, tabs } = useTabsStore();
+  const activeView = tabs.find((tab) => tab.id === activeTabId)?.view;
   return (
     <aside
       className={`border-r border-border bg-panel/90 py-6 transition-all ${
@@ -25,9 +28,28 @@ export function SideNav() {
         </button>
       </div>
       <div className="space-y-2">
-        {items.map((item) => (
-          <NavItem key={item.id} label={sidebarCollapsed ? item.label[0] : item.label} />
-        ))}
+        {items.map((item) => {
+          const label = sidebarCollapsed ? item.label[0] : item.label;
+          if (item.id === "dashboard" || item.id === "charts") {
+            const view = item.id === "dashboard" ? "dashboard" : "chart";
+            return (
+              <NavItem
+                key={item.id}
+                label={label}
+                active={activeView === view}
+                onClick={() => setActiveTabByView(view)}
+              />
+            );
+          }
+          return (
+            <NavItem
+              key={item.id}
+              label={label}
+              disabled
+              tooltip={`${item.label} (coming soon)`}
+            />
+          );
+        })}
       </div>
     </aside>
   );

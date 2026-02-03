@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 from typing import List
 
 from data_platform.schemas import ProviderStatus
 
 
 def init_db(db_path: str) -> None:
+    db_file = Path(db_path)
+    if db_file.parent and not db_file.parent.exists():
+        db_file.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
         conn.execute(
             """

@@ -33,7 +33,15 @@ class YahooProvider(ProviderAdapter):
             return [], None
 
         df = df.reset_index()
-        ts_col = "Datetime" if "Datetime" in df.columns else "Date"
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
+        ts_col = None
+        for candidate in ("Datetime", "Date", "index"):
+            if candidate in df.columns:
+                ts_col = candidate
+                break
+        if not ts_col:
+            raise RuntimeError("Yahoo data missing date column")
         df["timestamp"] = pd.to_datetime(df[ts_col], errors="coerce")
         df = df.dropna(subset=["timestamp"])
         df["timestamp"] = df["timestamp"].astype("int64") // 10**9

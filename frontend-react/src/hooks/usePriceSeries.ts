@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { postJson, PriceBar } from "@/utils/api";
-import { SeriesPoint } from "@/utils/indicators";
+import { postJson } from "@/utils/api";
+import type { PriceBar } from "@/utils/api";
+import type { SeriesPoint } from "@/utils/indicators";
 
 type PriceSeriesState = {
   data: SeriesPoint[];

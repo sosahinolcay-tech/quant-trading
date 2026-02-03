@@ -1,4 +1,4 @@
-import { Responsive, WidthProvider } from "react-grid-layout";
+import RGL from "react-grid-layout";
 import { MarketOverview } from "@/components/widgets/MarketOverview";
 import { HeatmapWidget } from "@/components/widgets/HeatmapWidget";
 import { OhlcChartWidget } from "@/components/widgets/OhlcChartWidget";
@@ -7,20 +7,18 @@ import { NewsFeedWidget } from "@/components/widgets/NewsFeedWidget";
 import { SignalsWidget } from "@/components/widgets/SignalsWidget";
 import { useLayoutStore } from "@/state/useLayoutStore";
 
-const ResponsiveGrid = WidthProvider(Responsive);
-
 export function DashboardPage() {
   const { layouts, setLayouts } = useLayoutStore();
 
   return (
-    <ResponsiveGrid
+    <RGL
       className="layout"
-      layouts={layouts}
-      breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
-      cols={{ lg: 12, md: 10, sm: 6, xs: 4 }}
+      layout={layouts.lg}
+      cols={12}
       rowHeight={60}
+      width={1200}
       draggableHandle=".widget-handle"
-      onLayoutChange={(_, next) => setLayouts(next)}
+      onLayoutChange={(next) => setLayouts({ lg: next })}
     >
       <div key="market" className="rounded-xl bg-card shadow-soft border border-border">
         <MarketOverview />
@@ -40,6 +38,6 @@ export function DashboardPage() {
       <div key="signals" className="rounded-xl bg-card shadow-soft border border-border">
         <SignalsWidget />
       </div>
-    </ResponsiveGrid>
+    </RGL>
   );
 }

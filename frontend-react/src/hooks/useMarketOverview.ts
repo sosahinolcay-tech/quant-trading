@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { postJson, PriceBar } from "@/utils/api";
+import { postJson } from "@/utils/api";
+import type { PriceBar } from "@/utils/api";
 
 type OverviewItem = {
   symbol: string;
