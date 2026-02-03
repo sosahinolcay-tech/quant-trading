@@ -133,8 +133,20 @@ class SyntheticDataSource(DataSource):
         if days <= 0:
             days = 252
 
-        freq = "D" if interval in ("1d", "1D", "day") else "H"
-        timestamps = pd.date_range(start=start, periods=days, freq=freq)
+        if interval in ("1d", "1D", "day"):
+            freq = "D"
+            periods = max(days, 1)
+        elif interval.endswith("m"):
+            step = int(interval[:-1]) if interval[:-1].isdigit() else 1
+            freq = f"{step}min"
+            periods = max(days, 1) * 60
+        elif interval.endswith("h") or interval in ("1h", "1H"):
+            freq = "h"
+            periods = max(days, 1) * 24
+        else:
+            freq = "h"
+            periods = max(days, 1) * 24
+        timestamps = pd.date_range(start=start, periods=periods, freq=freq)
         prices = [100.0]
 
         vol = 0.015

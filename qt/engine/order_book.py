@@ -160,6 +160,16 @@ class OrderBook:
         fills = []
         remaining = float(size)
 
+        # If there is no exact match at price, try crossing the best levels.
+        # This allows trades at a price to hit resting quotes when the trade
+        # price crosses the spread.
+        best_ask = self.ask_levels[0] if self.ask_levels else None
+        best_bid = self.bid_levels[0] if self.bid_levels else None
+        if price not in self.asks and best_ask is not None and price >= best_ask:
+            price = best_ask
+        elif price not in self.bids and best_bid is not None and price <= best_bid:
+            price = best_bid
+
         # check asks at price (sell liquidity resting) -> buy market hit
         if price in self.asks and remaining > 0:
             qdeque = self.asks[price]

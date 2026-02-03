@@ -4,6 +4,7 @@ from typing import Optional, List, Dict, Any
 
 import os
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from qt.engine.engine import SimulationEngine
@@ -14,6 +15,13 @@ from qt.data import get_prices_with_quality
 from qt.analytics.walk_forward import walk_forward_intraday
 
 app = FastAPI(title="Quant Trading API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _expected_freq_seconds(interval: str) -> Optional[int]:
