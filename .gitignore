@@ -21,6 +21,8 @@ coverage.xml
 dist/
 api/.venv/
 frontend/node_modules/
+frontend-react/node_modules/
+frontend-react/dist/
 runs/
 reports/
 # Python dist

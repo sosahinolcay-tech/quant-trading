@@ -13,6 +13,7 @@ from qt.strategies.pairs import PairsStrategy
 from qt.analytics.reports import full_report
 from qt.data import get_prices_with_quality
 from qt.analytics.walk_forward import walk_forward_intraday
+from data_platform.api import router as platform_router
 
 app = FastAPI(title="Quant Trading API", version="0.1.0")
 app.add_middleware(
@@ -22,6 +23,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(platform_router, tags=["data-platform"])
 
 
 def _expected_freq_seconds(interval: str) -> Optional[int]:

@@ -7,6 +7,9 @@ const runMarketMakerBtn = document.getElementById("runMarketMaker");
 const runPairsBtn = document.getElementById("runPairs");
 const runQualityBtn = document.getElementById("runQuality");
 const runWalkForwardBtn = document.getElementById("runWalkForward");
+const runDataExplorerBtn = document.getElementById("runDataExplorer");
+const refreshProvidersBtn = document.getElementById("refreshProviders");
+const downloadDataBtn = document.getElementById("downloadData");
 
 const metricSharpe = document.getElementById("metricSharpe");
 const metricHitRate = document.getElementById("metricHitRate");
@@ -15,12 +18,15 @@ const metricGross = document.getElementById("metricGross");
 
 const walkForwardTable = document.getElementById("walkForwardTable");
 const qualityReport = document.getElementById("qualityReport");
+const dataExplorerTable = document.getElementById("dataExplorerTable");
+const providerStatus = document.getElementById("providerStatus");
 
 const mmChartEl = document.getElementById("mmChart");
 const pairsChartEl = document.getElementById("pairsChart");
 
 let mmChart;
 let pairsChart;
+let lastExplorerData = [];
 
 function baseUrl() {
   return apiBaseInput.value.replace(/\/+$/, "");
@@ -177,11 +183,77 @@ async function runWalkForward() {
     .join("");
 }
 
+async function runDataExplorer() {
+  const payload = {
+    symbol: document.getElementById("dataSymbol").value,
+    start: document.getElementById("dataStart").value,
+    end: document.getElementById("dataEnd").value,
+    interval: document.getElementById("dataInterval").value,
+    source: document.getElementById("dataSource").value,
+  };
+  const res = await fetch(`${baseUrl()}/data/prices`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Data explorer fetch failed");
+  const data = await res.json();
+  lastExplorerData = data || [];
+  if (!data?.length) {
+    dataExplorerTable.textContent = "No data returned.";
+    return;
+  }
+  dataExplorerTable.innerHTML = data
+    .slice(0, 10)
+    .map(
+      (row) =>
+        `<div>${row.timestamp} | O:${row.price_open} H:${row.price_high} L:${row.price_low} C:${row.price_close} V:${row.volume}</div>`
+    )
+    .join("");
+}
+
+function downloadExplorerCsv() {
+  if (!lastExplorerData.length) {
+    dataExplorerTable.textContent = "No data to export.";
+    return;
+  }
+  const headers = Object.keys(lastExplorerData[0]);
+  const rows = [headers.join(",")].concat(
+    lastExplorerData.map((row) => headers.map((h) => row[h]).join(","))
+  );
+  const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "prices.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function refreshProviders() {
+  const res = await fetch(`${baseUrl()}/providers/status`);
+  if (!res.ok) throw new Error("Provider status fetch failed");
+  const data = await res.json();
+  if (!data?.length) {
+    providerStatus.textContent = "No provider status yet.";
+    return;
+  }
+  providerStatus.innerHTML = data
+    .map(
+      (row) =>
+        `<div>${row.name}: ${row.status} (last_success: ${row.last_success || "n/a"})</div>`
+    )
+    .join("");
+}
+
 healthBtn.addEventListener("click", checkHealth);
 runMarketMakerBtn.addEventListener("click", runMarketMaker);
 runPairsBtn.addEventListener("click", runPairs);
 runQualityBtn.addEventListener("click", runQuality);
 runWalkForwardBtn.addEventListener("click", runWalkForward);
+runDataExplorerBtn.addEventListener("click", runDataExplorer);
+refreshProvidersBtn.addEventListener("click", refreshProviders);
+downloadDataBtn.addEventListener("click", downloadExplorerCsv);
 refreshAll.addEventListener("click", async () => {
   await runMarketMaker();
   await runPairs();

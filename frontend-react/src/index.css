@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "react-grid-layout/css/styles.css";
+@import "react-resizable/css/styles.css";
+
+@layer base {
+  :root {
+    --color-bg: 11 15 26;
+    --color-panel: 15 20 36;
+    --color-card: 19 26 47;
+    --color-border: 255 255 255;
+    --color-accent: 124 92 255;
+    --color-accent2: 92 225 230;
+    --color-text: 244 246 251;
+    --color-muted: 167 176 192;
+  }
+
+  :root[data-theme="light"] {
+    --color-bg: 245 247 252;
+    --color-panel: 255 255 255;
+    --color-card: 246 248 252;
+    --color-border: 220 225 236;
+    --color-accent: 78 70 229;
+    --color-accent2: 37 193 199;
+    --color-text: 15 23 42;
+    --color-muted: 100 116 139;
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-background text-text font-sans;
+}
+
+#root {
+  height: 100%;
+}
+
+@layer components {
+  .widget-handle {
+    @apply cursor-move select-none;
+  }
+}

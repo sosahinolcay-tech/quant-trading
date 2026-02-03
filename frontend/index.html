@@ -44,10 +44,10 @@
             </select>
           </label>
           <label>Start Date
-            <input id="globalStart" type="date" value="2024-01-01" />
+            <input id="globalStart" type="date" value="2025-01-29" />
           </label>
           <label>End Date
-            <input id="globalEnd" type="date" value="2024-06-01" />
+            <input id="globalEnd" type="date" value="2025-02-03" />
           </label>
         </div>
       </aside>
@@ -134,6 +134,44 @@
               <button id="runQuality" class="ghost small">Check</button>
             </div>
             <div id="qualityReport" class="quality-grid muted">No report yet.</div>
+          </div>
+        </section>
+
+        <section class="grid">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Data Explorer</h3>
+                <p class="muted">Unified price data with export-ready results</p>
+              </div>
+              <div class="button-row">
+                <button id="runDataExplorer" class="primary small">Fetch</button>
+                <button id="downloadData" class="ghost small">Download CSV</button>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label>Symbol <input id="dataSymbol" value="AAPL" /></label>
+              <label>Source
+                <select id="dataSource">
+                  <option value="yahoo">Yahoo</option>
+                  <option value="alpha_vantage">Alpha Vantage</option>
+                </select>
+              </label>
+              <label>Interval <input id="dataInterval" value="1m" /></label>
+              <label>Start <input id="dataStart" type="date" value="2025-01-29" /></label>
+              <label>End <input id="dataEnd" type="date" value="2025-02-03" /></label>
+            </div>
+            <div id="dataExplorerTable" class="table muted">No data yet.</div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Provider Status</h3>
+                <p class="muted">Connection and freshness overview</p>
+              </div>
+              <button id="refreshProviders" class="ghost small">Refresh</button>
+            </div>
+            <div id="providerStatus" class="quality-grid muted">No status yet.</div>
           </div>
         </section>
       </main>
