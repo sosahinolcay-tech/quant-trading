@@ -30,8 +30,18 @@ export function SideNav() {
       <div className="space-y-2">
         {items.map((item) => {
           const label = sidebarCollapsed ? item.label[0] : item.label;
-          if (item.id === "dashboard" || item.id === "charts") {
-            const view = item.id === "dashboard" ? "dashboard" : "chart";
+          if (
+            item.id === "dashboard" ||
+            item.id === "charts" ||
+            item.id === "screener" ||
+            item.id === "strategies" ||
+            item.id === "portfolio" ||
+            item.id === "settings"
+          ) {
+            const view =
+              item.id === "charts"
+                ? "chart"
+                : (item.id as "dashboard" | "screener" | "strategies" | "portfolio" | "settings");
             return (
               <NavItem
                 key={item.id}
@@ -41,14 +51,7 @@ export function SideNav() {
               />
             );
           }
-          return (
-            <NavItem
-              key={item.id}
-              label={label}
-              disabled
-              tooltip={`${item.label} (coming soon)`}
-            />
-          );
+          return null;
         })}
       </div>
     </aside>

@@ -1,12 +1,20 @@
 import type { ReactNode } from "react";
 import { DashboardPage } from "@/app/routes/DashboardPage";
 import { ChartPage } from "@/app/routes/ChartPage";
+import { ScreenerPage } from "@/app/routes/ScreenerPage";
+import { StrategiesPage } from "@/app/routes/StrategiesPage";
+import { PortfolioPage } from "@/app/routes/PortfolioPage";
+import { SettingsPage } from "@/app/routes/SettingsPage";
 import { TabButton } from "@/components/ui/TabButton";
 import { useTabsStore } from "@/state/useTabsStore";
 
 const viewMap: Record<string, ReactNode> = {
   dashboard: <DashboardPage />,
   chart: <ChartPage />,
+  screener: <ScreenerPage />,
+  strategies: <StrategiesPage />,
+  portfolio: <PortfolioPage />,
+  settings: <SettingsPage />,
 };
 
 export function TabWorkspace() {

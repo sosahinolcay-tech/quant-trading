@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import List
+from datetime import datetime, timezone
 
 import os
 from io import StringIO
@@ -110,10 +111,105 @@ def providers_status(response: Response, x_api_key: Optional[str] = Header(defau
 
 
 @router.get("/data/news", response_model=List[dict])
-def news(response: Response, x_api_key: Optional[str] = Header(default=None)):
+def news(
+    response: Response,
+    symbol: Optional[str] = None,
+    x_api_key: Optional[str] = Header(default=None),
+):
     _check_api_key(x_api_key)
     _set_rate_headers(response)
-    return []
+    if symbol:
+        symbols = [symbol]
+    else:
+        symbols = os.getenv("PLATFORM_NEWS_SYMBOLS", "SPY,AAPL,MSFT,NVDA").split(",")
+    items = []
+    try:
+        import yfinance as yf
+    except Exception:
+        return []
+    for symbol in [s.strip() for s in symbols if s.strip()]:
+        try:
+            ticker = yf.Ticker(symbol)
+            for entry in ticker.news or []:
+                payload = entry.get("content") if isinstance(entry, dict) else None
+                payload = payload or entry
+                headline = payload.get("title") or payload.get("headline")
+                if not headline:
+                    continue
+                ts = payload.get("providerPublishTime") or payload.get("time")
+                if not ts:
+                    pub_date = payload.get("pubDate") or payload.get("displayTime")
+                    if pub_date:
+                        try:
+                            ts = int(datetime.fromisoformat(pub_date.replace("Z", "+00:00")).timestamp())
+                        except Exception:
+                            ts = None
+                time_label = (
+                    datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%H:%M UTC")
+                    if ts
+                    else "N/A"
+                )
+                provider = payload.get("provider") if isinstance(payload.get("provider"), dict) else None
+                source = (
+                    provider.get("displayName")
+                    if provider
+                    else payload.get("publisher") or payload.get("source") or symbol
+                )
+                items.append(
+                    {
+                        "id": payload.get("uuid") or entry.get("uuid") or f"{symbol}-{ts}-{headline[:12]}",
+                        "headline": headline,
+                        "source": source,
+                        "time": time_label,
+                        "_ts": ts or 0,
+                    }
+                )
+        except Exception:
+            continue
+    seen = set()
+    unique = []
+    for item in sorted(items, key=lambda row: row.get("_ts", 0), reverse=True):
+        key = item["id"]
+        if key in seen:
+            continue
+        seen.add(key)
+        item.pop("_ts", None)
+        unique.append(item)
+    return unique[:30]
+
+
+@router.get("/data/search", response_model=List[dict])
+def search(query: str):
+    if not query:
+        return []
+    try:
+        import requests
+    except Exception:
+        return []
+    try:
+        resp = requests.get(
+            "https://query2.finance.yahoo.com/v1/finance/search",
+            params={"q": query, "quotesCount": 10, "newsCount": 0},
+            timeout=6,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception:
+        return []
+    quotes = data.get("quotes", [])
+    out = []
+    for item in quotes:
+        symbol = item.get("symbol")
+        if not symbol:
+            continue
+        out.append(
+            {
+                "symbol": symbol,
+                "name": item.get("shortname") or item.get("longname") or "",
+                "exchange": item.get("exchange") or "",
+            }
+        )
+    return out
 
 
 def _set_rate_headers(response: Response) -> None:

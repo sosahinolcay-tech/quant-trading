@@ -3,7 +3,7 @@ import { create } from "zustand";
 type Tab = {
   id: string;
   title: string;
-  view: "dashboard" | "chart";
+  view: "dashboard" | "chart" | "screener" | "strategies" | "portfolio" | "settings";
 };
 
 type TabState = {
@@ -16,6 +16,10 @@ type TabState = {
 const initialTabs: Tab[] = [
   { id: "tab-dashboard", title: "Dashboard", view: "dashboard" },
   { id: "tab-chart", title: "Charts", view: "chart" },
+  { id: "tab-screener", title: "Screener", view: "screener" },
+  { id: "tab-strategies", title: "Strategies", view: "strategies" },
+  { id: "tab-portfolio", title: "Portfolio", view: "portfolio" },
+  { id: "tab-settings", title: "Settings", view: "settings" },
 ];
 
 export const useTabsStore = create<TabState>((set, get) => ({

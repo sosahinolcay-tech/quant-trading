@@ -21,22 +21,22 @@ export function SignalsWidget() {
   ].filter(Boolean) as Array<{ symbol: string; strategy: string; side: string; confidence: number }>;
 
   return (
-    <div className="h-full p-4">
-      <div className="widget-handle mb-3 flex items-center justify-between">
-        <div className="text-sm font-semibold">Strategy Signals</div>
-        <span className="text-xs text-muted">Intraday</span>
+    <div className="h-full p-2">
+      <div className="widget-handle mb-1.5 flex items-center justify-between">
+        <div className="text-xs font-semibold">Strategy Signals</div>
+        <span className="text-[11px] text-muted">Intraday</span>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-1.5">
         {signals.length === 0 ? (
-          <div className="text-sm text-muted">Loading signals...</div>
+          <div className="text-xs text-muted">Loading signals...</div>
         ) : (
           signals.map((signal) => (
           <div key={signal.symbol} className="flex items-center justify-between">
             <div>
               <div className="text-sm">{signal.symbol}</div>
-              <div className="text-xs text-muted">{signal.strategy}</div>
+              <div className="text-[11px] text-muted">{signal.strategy}</div>
             </div>
-            <div className={`text-xs ${signal.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}>
+            <div className={`text-[11px] ${signal.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}>
               {signal.side} · {signal.confidence}%
             </div>
           </div>

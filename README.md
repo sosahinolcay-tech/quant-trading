@@ -36,6 +36,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+If you only want the API + frontend (without the full research stack), you can install the
+lighter API requirements instead:
+```bash
+pip install -r api/requirements.txt
+```
+
 ### Run Demos
 
 - **Market Maker Demo**:
@@ -146,6 +152,8 @@ quant-trading/
 │   ├── risk/                    # Risk management
 │   ├── analytics/               # Performance analytics
 │   └── utils/                   # Utilities
+├── api/                         # FastAPI service
+├── frontend-react/              # React dashboard
 ├── tools/                       # Demo and analysis scripts
 ├── tests/                       # Unit and integration tests
 ├── notebooks/                   # Jupyter notebooks
@@ -176,10 +184,7 @@ Statistical arbitrage strategy with:
 
 ## Documentation
 
-- **[Final Report](docs/FINAL_REPORT.md)** - Comprehensive project report with results and analysis
-- **[Final Report (HTML)](docs/FINAL_REPORT.html)** - HTML version of final report
-- **[Case Study](docs/case_study.md)** - Strategy methodology and results
-- **[Week 5 Risk Analytics](docs/week5_risk.md)** - Risk analytics documentation
+- **[Repository Secrets](docs/REPO_SECRETS.md)** - CI and release secret setup
 
 ## Contributing
 

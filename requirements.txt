@@ -12,3 +12,5 @@ numba>=0.57.0
 yfinance>=0.2.0
 requests>=2.32.0
 pyarrow
+fastapi
+uvicorn
