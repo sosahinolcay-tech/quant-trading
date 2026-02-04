@@ -25,6 +25,9 @@ frontend-react/node_modules/
 frontend-react/dist/
 runs/
 reports/
+api/platform_data/
+# Pytest cache
+.pytest_cache/
 # Python dist
 dist/
 build/
