@@ -114,32 +114,57 @@ quant-trading/
 graph TB
   subgraph "Frontend"
     UI[React Dashboard]
+    W1[Market + Heatmap Widgets]
+    W2[Charts + Volume + Signals]
+    W3[News + Screener]
+    UI --> W1
+    UI --> W2
+    UI --> W3
   end
 
-  subgraph "API"
-    API[FastAPI Service]
+  subgraph "API Service"
+    API_SVC[FastAPI Router]
+    EP1[/data/prices]
+    EP2[/data/fundamentals]
+    EP3[/data/news]
+    EP4[/providers/status]
+    EP5[/data/search]
+    API_SVC --> EP1
+    API_SVC --> EP2
+    API_SVC --> EP3
+    API_SVC --> EP4
+    API_SVC --> EP5
   end
 
   subgraph "Data Platform"
     SCH[Unified Schemas]
     PRV[Provider Adapters]
-    STO[Storage: Parquet + SQLite]
+    YF[Yahoo Finance]
+    AV[Alpha Vantage]
+    STO[Storage Layer]
+    TS[Parquet Time-Series]
+    META[SQLite Metadata]
+    SCH --> PRV
+    PRV --> YF
+    PRV --> AV
+    STO --> TS
+    STO --> META
   end
 
   subgraph "Quant Engine"
     ENG[Simulation Engine]
     STR[Strategies]
-    ANA[Analytics]
+    ANA[Analytics + Reports]
   end
 
-  UI --> API
-  API --> SCH
-  API --> PRV
-  API --> STO
-  API --> ENG
+  UI --> API_SVC
+  API_SVC --> SCH
+  API_SVC --> PRV
+  API_SVC --> STO
+  API_SVC --> ENG
+  PRV --> STO
   ENG --> STR
   ENG --> ANA
-  PRV --> STO
 ```
 
 ## Documentation
