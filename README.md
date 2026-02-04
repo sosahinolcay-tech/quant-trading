@@ -124,11 +124,11 @@ graph TB
 
   subgraph "API Service"
     API_SVC[FastAPI Router]
-    EP1[/data/prices]
-    EP2[/data/fundamentals]
-    EP3[/data/news]
-    EP4[/providers/status]
-    EP5[/data/search]
+    EP1["/data/prices"]
+    EP2["/data/fundamentals"]
+    EP3["/data/news"]
+    EP4["/providers/status"]
+    EP5["/data/search"]
     API_SVC --> EP1
     API_SVC --> EP2
     API_SVC --> EP3
