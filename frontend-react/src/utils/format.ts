@@ -24,3 +24,19 @@ export function formatTimestamp(value: number) {
   const date = new Date(value * 1000);
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
+
+export function formatTime(value: number) {
+  const date = new Date(value * 1000);
+  return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+export function formatTimestampWithTime(value: number) {
+  const date = new Date(value * 1000);
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}

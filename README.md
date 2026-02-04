@@ -1,23 +1,20 @@
-# Quant Trading Framework
+# Quant Trading Data Platform
 
 [![CI](https://github.com/sosahinolcay-tech/quant-trading/actions/workflows/ci.yml/badge.svg)](https://github.com/sosahinolcay-tech/quant-trading/actions)
 [![codecov](https://codecov.io/gh/sosahinolcay-tech/quant-trading/branch/main/graph/badge.svg)](https://codecov.io/gh/sosahinolcay-tech/quant-trading)
 [![PyPI version](https://badge.fury.io/py/quant-trading.svg)](https://pypi.org/project/quant-trading/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive event-driven quantitative trading simulator built in Python. The framework includes multiple trading strategies, a backtesting engine, risk management, analytics, and performance evaluation tools.
+An OpenBB-style financial data platform with a FastAPI backend, unified schemas, provider adapters, and a professional React dashboard. It also retains the core quant trading engine for strategy demos and analytics.
 
 ## Features
 
-- **Event-Driven Engine**: Realistic simulation with limit order matching, slippage, and transaction costs
-- **Trading Strategies**:
-  - Market Maker (Avellaneda model with adaptive quoting)
-  - Pairs Trading (rolling OLS with z-score signals)
-- **Analytics & Reporting**: Sharpe ratio, drawdown analysis, bootstrap confidence intervals, trade logs
-- **Tools**: Parameter sweep optimization, walk-forward analysis, demo scripts
-- **Visualization**: Interactive dashboards and Jupyter notebooks for results
-- **Testing**: Comprehensive unit and integration tests
-- **CI/CD**: Automated testing and deployment pipeline
+- **Data Platform API**: `/data/prices`, `/data/fundamentals`, `/data/news`, `/providers/status`, `/data/search`
+- **Unified Schemas**: normalized price + fundamentals records with provider metadata
+- **Storage**: Parquet time-series + SQLite metadata
+- **Providers**: Yahoo Finance, Alpha Vantage (extensible adapter pattern)
+- **Frontend**: React + TypeScript dashboard with charts, heatmaps, news, and signals
+- **Quant Engine**: event-driven simulation and strategy demos
 
 ## Quick Start
 
@@ -36,37 +33,35 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-If you only want the API + frontend (without the full research stack), you can install the
-lighter API requirements instead:
+If you only want the API + frontend (without the full research stack), install the lighter API
+requirements:
 ```bash
 pip install -r api/requirements.txt
 ```
 
-### Run Demos
+### Run API + Frontend
 
-- **Market Maker Demo**:
-```bash
-python tools/run_demo.py
-```
-
-- **Pairs Trading Demo**:
-```bash
-python tools/demo_pairs.py
-```
-
-- **Interactive Dashboard** (requires Streamlit):
-```bash
-pip install streamlit matplotlib
-streamlit run app/streamlit_app.py
-```
-
-- **API + Professional Frontend**:
 ```bash
 ./scripts/run_api.sh
 ./scripts/serve_frontend.sh
 ```
 
-- **Jupyter Notebooks**: Open `notebooks/` for interactive analysis
+API: `http://127.0.0.1:8010/docs`  
+Frontend: `http://localhost:5173`
+
+### Strategy Demos (optional)
+
+```bash
+python tools/run_demo.py
+python tools/demo_pairs.py
+```
+
+### Streamlit Dashboard (optional)
+
+```bash
+pip install streamlit matplotlib
+streamlit run app/streamlit_app.py
+```
 
 - **Performance Benchmarks**:
 ```bash
@@ -92,56 +87,6 @@ pytest
 ./scripts/ci-local.sh
 ```
 
-## Architecture
-
-```mermaid
-graph TB
-    subgraph "Data Sources"
-        DS[Data Sources]
-        DS --> |Historical Prices| SYN[Synthetic Data]
-        DS --> |Live Data| YF[Yahoo Finance]
-    end
-    
-    subgraph "Simulation Engine"
-        ENG[SimulationEngine]
-        OB[OrderBook]
-        EX[ExecutionModel]
-        ENG --> OB
-        ENG --> EX
-        ENG --> |Events| STRAT[Strategies]
-    end
-    
-    subgraph "Trading Strategies"
-        STRAT --> MM[Market Maker]
-        STRAT --> PAIRS[Pairs Trading]
-        MM --> |Orders| ENG
-        PAIRS --> |Orders| ENG
-    end
-    
-    subgraph "Risk & Accounting"
-        ACC[Account]
-        EX --> |Fills| ACC
-        ACC --> |Equity| METRICS[Metrics]
-    end
-    
-    subgraph "Analytics"
-        METRICS --> PERF[Performance]
-        METRICS --> RISK[Risk Analytics]
-        METRICS --> STAT[Statistics]
-        PERF --> |Sharpe, Drawdown| REP[Reports]
-        RISK --> |VaR, CVaR| REP
-        STAT --> |ADF, Bootstrap| REP
-    end
-    
-    subgraph "Visualization"
-        REP --> DASH[Streamlit Dashboard]
-        REP --> NB[Jupyter Notebooks]
-    end
-    
-    DS --> ENG
-    ENG --> ACC
-```
-
 ## Project Structure
 
 ```
@@ -153,7 +98,9 @@ quant-trading/
 │   ├── analytics/               # Performance analytics
 │   └── utils/                   # Utilities
 ├── api/                         # FastAPI service
+│   └── platform_data/           # Local parquet/sqlite cache (gitignored)
 ├── frontend-react/              # React dashboard
+├── data_platform/               # Data platform schemas, providers, storage
 ├── tools/                       # Demo and analysis scripts
 ├── tests/                       # Unit and integration tests
 ├── notebooks/                   # Jupyter notebooks
@@ -161,26 +108,39 @@ quant-trading/
 └── docs/                        # Documentation
 ```
 
-## Strategies
+## Architecture
 
-### Market Maker
-Implements the Avellaneda & Stoikov model with:
-- EWMA volatility estimation
-- Inventory risk management
-- Adaptive bid-ask spreads
+```mermaid
+graph TB
+  subgraph "Frontend"
+    UI[React Dashboard]
+  end
 
-### Pairs Trading
-Statistical arbitrage strategy with:
-- Rolling OLS regression
-- Z-score based entry/exit signals
-- Cointegration testing
+  subgraph "API"
+    API[FastAPI Service]
+  end
 
-## Analytics
+  subgraph "Data Platform"
+    SCH[Unified Schemas]
+    PRV[Provider Adapters]
+    STO[Storage: Parquet + SQLite]
+  end
 
-- **Performance Metrics**: Sharpe ratio, maximum drawdown, returns
-- **Statistical Tests**: Augmented Dickey-Fuller for stationarity
-- **Confidence Intervals**: Bootstrap resampling for Sharpe ratio
-- **Walk-Forward Analysis**: Out-of-sample validation
+  subgraph "Quant Engine"
+    ENG[Simulation Engine]
+    STR[Strategies]
+    ANA[Analytics]
+  end
+
+  UI --> API
+  API --> SCH
+  API --> PRV
+  API --> STO
+  API --> ENG
+  ENG --> STR
+  ENG --> ANA
+  PRV --> STO
+```
 
 ## Documentation
 

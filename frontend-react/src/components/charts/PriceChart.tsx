@@ -8,7 +8,7 @@ import {
   Line,
   Customized,
 } from "recharts";
-import { formatCurrency, formatTimestamp } from "@/utils/format";
+import { formatCurrency, formatTime, formatTimestamp, formatTimestampWithTime } from "@/utils/format";
 import type { SeriesPoint } from "@/utils/indicators";
 
 type PriceChartProps = {
@@ -17,12 +17,17 @@ type PriceChartProps = {
 };
 
 export function PriceChart({ height = 360, data = [] }: PriceChartProps) {
+  const timestamps = data.map((point) => point.timestamp);
+  const minTs = timestamps.length ? Math.min(...timestamps) : 0;
+  const maxTs = timestamps.length ? Math.max(...timestamps) : 0;
+  const showTime = maxTs - minTs <= 60 * 60 * 24;
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={data}>
         <XAxis
           dataKey="timestamp"
-          tickFormatter={formatTimestamp}
+          tickFormatter={showTime ? formatTime : formatTimestamp}
           tick={{ fill: "#A7B0C0", fontSize: 10 }}
         />
         <YAxis
@@ -34,7 +39,9 @@ export function PriceChart({ height = 360, data = [] }: PriceChartProps) {
           cursor={{ stroke: "rgba(255,255,255,0.2)", strokeWidth: 1 }}
           contentStyle={{ background: "#0F1424", border: "1px solid rgba(255,255,255,0.08)" }}
           formatter={(value: number) => formatCurrency(value)}
-          labelFormatter={(label: number) => formatTimestamp(label)}
+          labelFormatter={(label: number) =>
+            showTime ? formatTimestampWithTime(label) : formatTimestamp(label)
+          }
         />
         <Customized component={Candlesticks} />
         <Line type="monotone" dataKey="ma20" stroke="#7C5CFF" strokeWidth={1.5} dot={false} />
